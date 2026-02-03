@@ -1,0 +1,47 @@
+-- Database: `tappDB`
+
+create database tappDB;
+use tappDB;
+
+create table operatore(ID int auto_increment,nome varchar(30),cognome varchar(30),dataNascita date,sesso varchar(1),telefono bigint,username longtext,password longtext,utente enum("AUTISTA","AMMINISTRATIVO"), attivo bool,PRIMARY KEY (ID));
+
+create table luogo(ID int auto_increment,denominazione varchar(30),indirizzo varchar(30),civico varchar(5),citta varchar(30),note longtext, attivo bool, PRIMARY KEY(ID));
+
+create table automezzo(targa varchar(10),codiceMezzo varchar(20),img varchar(255), attivo bool,PRIMARY KEY(targa));
+
+create table turno(ID int auto_increment, dataInizio datetime, dataFine datetime, id_operatore int, automezzo varchar(10), note longtext, PRIMARY KEY(ID), FOREIGN KEY(id_operatore) REFERENCES operatore(ID), FOREIGN KEY(automezzo) REFERENCES automezzo(targa));
+
+create table utente(ID int auto_increment,CF varchar(20),nome varchar(30),cognome varchar(30),dataNascita date,luogoNascita varchar(30),sesso varchar(1),indirizzo varchar(30),civico varchar(5),citta varchar(30), telefono bigint, noteUtente longtext, username longtext, password longtext, attivo bool, PRIMARY KEY(ID));
+
+create table missione(ID int auto_increment,statoCompilazione enum("INSERITA","ASSEGNATA","COMPLETATA", "ANNULLATA"), partenza datetime, annotazioni longtext, id_obiettivo int,id_destinazione int,id_turno int,id_utente int,PRIMARY KEY(ID),FOREIGN KEY(id_obiettivo) REFERENCES luogo(ID),FOREIGN KEY(id_destinazione) REFERENCES luogo(ID),FOREIGN KEY(id_utente) REFERENCES utente(ID), FOREIGN KEY(id_turno) REFERENCES turno(ID));
+
+
+-- Dati 1: automezzo
+
+insert into automezzo values("AU001AU","Macchina1","./assets/mezzi/auto.png",1);
+
+insert into automezzo values("AU002AU","Macchina2","./assets/mezzi/auto.png",1);
+
+-- Dati 2: luoghi
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) values("Abitazione dell'utente","-","-","-","-",1);     -- ID=0 : luogo Abitazione paziente
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) values("Luogo fittizio","-","-","-","-",1);             -- ID=1 : luogo fittizio per le missioni che non lo richiedono
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) values("Ospedale S.Jacopo","Via Ciliegiole","97","Pistoia (PT)","Ospedale San Jacopo - Pistoia",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) values("Ospedale Ceppo","Via degli Armeni","10","Pistoia (PT)","ex Ospedale Ceppo - Pistoia",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) values("COOP - Pistoia","Viale Adua",2,"Pistoia (PT)","Supermercato COOP di Pistoia",1);
+
+-- Dati 3: pazienti
+
+insert into utente(CF,nome,cognome,dataNascita,luogoNascita,sesso,indirizzo,civico,citta,telefono,noteUtente,username,password,attivo) values('RSSMRA90E15H501S', 'Mario', 'Rossi', '19900515', 'Roma', 'M', 'Via Roma', '10', 'Milano', 1234567890, 'Nessuna nota particolare',"michele", "$2y$10$qAG121h57hnM41IDf5PlD.KntFr.URbs4RPfyn2IrplR8TGJBtg8u",1);
+
+-- Dati 4: operatore
+
+insert into operatore(nome, cognome, dataNascita, sesso, telefono, username, password, utente, attivo) values("Michele", "Camiciotti", 20050408, "M", 3206309635, "michele", "$2y$10$qAG121h57hnM41IDf5PlD.KntFr.URbs4RPfyn2IrplR8TGJBtg8u", "AMMINISTRATIVO",1);
+
+-- Dati 5: turno
+
+insert into turno(dataInizio,dataFine) values(20000101000000,20000101000001); -- ID=1 : turno fittizzio da assegnare

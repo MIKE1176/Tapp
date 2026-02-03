@@ -1,0 +1,91 @@
+-- Database: `misegellodb`
+
+
+
+
+
+-- QUERY PER TROVARE L'ID DELLA MISSIONE ANALIZZATA
+
+-- Query BASE: mi trova gli ID delle missioni assegnate ad un ID di un volontario (da modificare $idVolontario con il valore dell'ID del volontario)
+
+SELECT missione.ID FROM volontario JOIN partecipa ON volontario.ID=partecipa.id_volontario JOIN turno ON partecipa.id_turno=turno.ID JOIN missione ON turno.ID=missione.id_turno WHERE volontario.ID = $idVolontario ORDER BY missione.ID ASC
+
+
+
+
+
+
+-- QUERY PER TROVARE L'ID COLLEGATI PER LA MISSIONE
+
+-- Query 1: ID PAZIENTE (da modificare $idMissione con il valore dell'ID della missione)
+
+SELECT paziente.ID FROM missione JOIN paziente ON missione.id_paziente=paziente.ID WHERE missione.ID=$idMissione;
+
+
+
+-- Query 2: ID LUOGO DELLA MISSIONE - OBIETTIVO(da modificare $idMissione con il valore dell'ID del missione)
+
+SELECT luogo.ID FROM missione JOIN luogo ON missione.id_obiettivo=luogo.ID WHERE missione.ID=$idMissione;
+
+
+
+-- Query 3: ID LUOGO DELLA MISSIONE - DESTINAZIONE(da modificare $idMissione con il valore dell'ID del missione)
+
+SELECT luogo.ID FROM missione JOIN luogo ON missione.id_destinazione=luogo.ID WHERE missione.ID=$idMissione;
+
+
+
+-- Query 4: ID TURNO (da modificare $idMissione con il valore dell'ID del missione)
+
+SELECT turno.ID FROM missione JOIN turno ON missione.id_turno=turno.ID WHERE missione.ID=$idMissione;
+
+
+
+-- Query 5: TARGA MEZZO (da modificare $idMissione con il valore dell'ID del missione)
+
+SELECT automezzo.targa FROM missione JOIN turno ON missione.id_turno=turno.ID JOIN automezzo ON turno.automezzo=automezzo.targa WHERE missione.ID=$idMissione;
+
+
+
+
+
+-- QUERY PER TROVARE L'ID COLLEGATI PER LA MISSIONE
+
+-- Query 1: DATA (da modificare $idMissione con il valore dell'ID della missione)
+
+SELECT DATE(missione.partenza) AS data FROM missione WHERE missione.ID=$idMissione;
+
+
+
+-- Query 2: ORA (da modificare $idMissione con il valore dell'ID della missione)
+
+SELECT TIME_FORMAT(missione.partenza,'%H:%i') AS ora FROM missione WHERE missione.ID=$idMissione;
+
+
+
+-- Query 3: NOME PAZIENTE (da modificare $idMissione con il valore dell'ID della missione)
+
+SELECT paziente.nome FROM paziente WHERE paziente.ID=$idPaziente;
+
+
+
+-- Query 4: COGNOME PAZIENTE (da modificare $idMissione con il valore dell'ID della missione)
+
+SELECT paziente.cognome FROM paziente WHERE paziente.ID=$idPaziente;
+
+
+-- Query 5: OBIETTIVO (da modificare $idMissione con il valore dell'ID della missione)
+
+SELECT luogo.denominazione FROM luogo WHERE luogo.ID=$idObiettivo;
+
+
+
+-- Query 6: DESTINAZIONE (da modificare $idMissione con il valore dell'ID della missione)
+
+SELECT luogo.denominazione FROM luogo WHERE luogo.ID=$idDestinazione;
+
+
+
+-- Query 7: CODICE MEZZO (da modificare $idMissione con il valore dell'ID della missione)
+SELECT automezzo.codiceMezzo FROM automezzo WHERE automezzo.targa='$targaMezzo';
+

@@ -1,0 +1,5 @@
+-- Database: `misegellodb`
+
+-- Query 1: mi trova la targa, codiceMezzo e kmCorrenti dei mezzi ordinati per il codice mezzo
+
+select automezzo.img,automezzo.targa,automezzo.codiceMezzo,automezzo.kmCorrenti from automezzo order by automezzo.codiceMezzo asc;
