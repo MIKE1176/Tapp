@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#e5e5e5">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="./css/style.css">
+    <script src="./js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+    </style>
+
+    <link rel="icon" href="./assets/favicon.png" type="image/x-icon">
+    <title>Registrati Residenza</title>
+</head>
+
+<body class="ubuntu-regular d-block justify-content-center accessoBody" onload="increase()">
+    <div class="mx-auto" style="max-width: 500px;">
+
+        <div class="sticky-top pt-3">
+            <div class="rounded-pill bg-light p-3 m-3 shadow mb-3 mt-0">
+                <div class="progress" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"
+                    style="height: 8px">
+                    <div class="progress-bar" style="width: 25%; transition: all 0.4s ease-in-out;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-2">
+            <img src="./assets/address.svg" alt="immagine login" class="img-fluid"
+                style="filter: drop-shadow(0 0 0.25rem #ffffff)">
+            <form action="#" method="post" class=" w-100 mt-3">
+                <h3>Dove abiti?</h3>
+                <hr class="m-0 mb-3">
+
+                <div class="hstack w-100 d-flex rounded-4" aria-label="inputIndirizzo">
+                    <div class="align-self-stretch bg-primary-subtle rounded-start-4 d-flex align-items-center p-2">
+                        <i class="h2 m-0 bi bi-house-door-fill"></i>
+                    </div>
+                    <div class="w-100">
+                        <div class="form-floating mb-0">
+                            <input type="text"
+                                class="form-control rounded-4 rounded-bottom-0 border-bottom-0 rounded-start-0 w-100"
+                                name="nome" placeholder="via" required>
+                            <label for="floatingInput">Via</label>
+                        </div>
+                        <div class="hstack">
+                            <div class="form-floating mt-0">
+                                <input type="number" class="form-control rounded-0 border-end-0 w-100" name="civico"
+                                    placeholder="Civico" min="1" required>
+                                <label for="floatingInput">Civico</label>
+                            </div>
+                            <div class="form-floating mt-0">
+                                <input type="number" maxlength="5"
+                                    class="form-control rounded-4 rounded-top-0 rounded-start-0 w-100" name="cap"
+                                    placeholder="CAP" min="00010" max="98168" required>
+                                <label for="floatingInput">CAP</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="mt-4">Dicci di più!</h3>
+                <hr class="m-0 mb-3">
+
+                <p class="text-muted mb-1">*a che piano abiti?</p>
+                <div class="input-group">
+                    <div class="input-group-text bg-primary-subtle rounded-top-4 rounded-end-0 rounded-0 p-3">
+                        <input class="form-check-input mt-0" type="radio" value="0"
+                            aria-label="Radio button for following text input" checked name="groupPiano"
+                            onclick="switchOnOff(this.value)">
+                    </div>
+                    <input type="text" class="form-control rounded-top-4 rounded-start-0 rounded-0" readonly
+                        aria-label="piano terra" value="piano terra">
+                </div>
+
+                <div class="input-group mb-3">
+                    <div class="input-group-text bg-primary-subtle rounded-top-0 rounded-4 rounded-end-0 p-3">
+                        <input class="form-check-input mt-0" type="radio" value="1"
+                            aria-label="Radio button for following text input" name="groupPiano"
+                            onclick="switchOnOff(this.value)">
+                    </div>
+                    <input id="pianoText" type="number"
+                        class="form-control border-top-0 rounded-bottom-4 rounded-start-0 rounded-0" min="1"
+                        aria-label="piano a scelta" placeholder="1,2,3..." disabled required>
+                </div>
+
+                <p class="text-muted d-none inputAddOns mb-1">*Le scale sono "strette" se sono meno larghe di 1,30 metri</p>
+                <div class="hstack w-100 d-none inputAddOns mb-3" aria-label="inputScale">
+                    <div class="align-self-stretch bg-primary-subtle rounded-start-4 d-flex align-items-center p-2">
+                        <i class="h3 m-0 bi bi-bar-chart-fill"></i>
+                    </div>
+                    <div class="w-100 hstack gap-0 p-0 d-flex align-items-stretch">
+                        <input type="radio" class="btn-check m-0" name="options-base1" id="light-outlined-1"
+                            autocomplete="off" checked>
+                        <label class="btn btn-light rounded-0 m-0 w-100" for="light-outlined-1"><span
+                                class="h3 fw-light">Scale Strette</span></label>
+
+                        <input type="radio" class="btn-check m-0" name="options-base1" id="light-outlined-2"
+                            autocomplete="off">
+                        <label class="btn btn-light rounded-0 m-0 w-100 rounded-end-4" for="light-outlined-2"><span
+                                class="h3 fw-light">Scale Larghe</span></label>
+                    </div>
+                </div>
+
+                <p class="text-muted d-none inputAddOns mb-1">*L'ascensore è "stretto" se la porta è più stretta di 1 metro e lo spazio nella cabina è minore di 1,20 x 1,20 metri</p>
+                <div class="hstack w-100 d-none inputAddOns align-items-stretch" aria-label="inputAddOns">
+                    <div
+                        class="align-self-stretch bg-primary-subtle rounded-start-4 d-flex align-items-center p-2 mb-0">
+                        <i class="h3 m-0 p-0 bi bi-arrow-down-up"></i>
+                    </div>
+                    <div class="vstack gap-0 p-0 m-0 align-items-stretch">
+                        <div class="w-100 hstack gap-0 p-0 d-flex align-items-stretch m-0">
+                            <input type="radio" class="btn-check m-0" name="options-base2" id="light-outlined-3"
+                                autocomplete="off" value="0" checked onclick="switchOnOffAsc(this.value)">
+                            <label class="btn btn-light rounded-0 m-0 p-2 w-100" for="light-outlined-3"><span
+                                    class="h3 fw-light">No ascensore</span></label>
+
+                            <input type="radio" class="btn-check m-0" name="options-base2" id="light-outlined-4"
+                                autocomplete="off" value="1" onclick="switchOnOffAsc(this.value)">
+                            <label class="btn btn-light rounded-0 m-0 p-2 w-100 rounded-end-4" for="light-outlined-4"
+                                id="swAsc"><span class="h3 fw-light">Ascensore</span></label>
+                        </div>
+
+                        <div class="w-100 hstack gap-0 p-0 m-0 d-none align-items-stretch inputAsc">
+                            <input type="radio" class="btn-check m-0" name="options-base6" id="light-outlined-5"
+                                autocomplete="off" checked>
+                            <label class="btn btn-light rounded-0 m-0 w-100" for="light-outlined-5"><span
+                                    class="h3 fw-light">Stretto</span></label>
+
+                            <input type="radio" class="btn-check m-0" name="options-base6" id="light-outlined-6"
+                                autocomplete="off">
+                            <label class="btn btn-light rounded-0 m-0 w-100 rounded-bottom-4 rounded-start-0"
+                                for="light-outlined-6"><span class="h3 fw-light">Largo</span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hstack gap-1 sticky-bottom mt-3">
+                    <div class="text-center w-100 mb-2 p-1 bg-dark-subtle rounded-pill">
+                        <button type="submit" class="btn btn-dark rounded-pill p-2 px-3 w-100"
+                            onclick="window.location.href='registrati-scroto-0.html'">
+                            <h3 class="m-0 p-0"><i class="bi bi-caret-left-fill m-0 p-0"></i> Indietro</h3>
+                        </button>
+                    </div>
+                    <div class="text-center w-100 mb-2 p-1 bg-primary-subtle rounded-pill">
+                        <button type="submit" class="btn btn-primary rounded-pill p-2 px-3 w-100"
+                            onclick="window.location.href='registrati-scroto-2.html'">
+                            <h3 class="m-0 p-0">Avanti<i class="bi bi-caret-right-fill m-0 p-0"></i></h3>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>
