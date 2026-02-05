@@ -2,30 +2,29 @@
     include("./session.php");
     check_auth();
 
-    // Carichiamo la configurazione per validazione sicurezza lato server
     $configPath = '../config_orari.json';
     $config = json_decode(file_get_contents($configPath), true);
     $minGG = $config['preavviso_minimo_giorni'];
     $maxGG = $config['limite_massimo_giorni'];
 
-    // Recupero dati dal form
     $idUtente = $_SESSION['ID'];
-    $idDestinazione = $_POST['idLuogo']; // Corrisponde a id="idluogo" nel form
-    
-    // Costruzione Data e Ora
-    // Il campo 'oraScelta' arriva come "HH:mm" (es. "09:30")
-    $dataInvio = $_POST['annoArrivo'] . '-' . $_POST['meseArrivo'] . '-' . $_POST['giornoArrivo'];
-    $oraInvio = $_POST['oraScelta'] . ':00';
-    $dataCompleta = $dataInvio . ' ' . $oraInvio;
+    $idDestinazione = $_POST['idLuogo'];
+    $durata = $_POST['oreDurata'] . ':' . $_POST['minutiDurata'] . ':00';
+    $statoCompilazione = "INSERITA";
 
-    // Costruzione Durata
-    // Formato HH:mm (es. "01:30")
-    $durata = $_POST['oreDurata'] . ':' . $_POST['minutiDurata'];
+    // --+-- CALCOLO COMPLETO ORARI/DATE --+--
 
-    $statoCompilazione="INSERITA";
+
+    // --- ANDATA ---
+
+    $dataAndata = $_POST['annoArrivo'] . '-' . $_POST['meseArrivo'] . '-' . $_POST['giornoArrivo'];
+    $oraAndata = $_POST['oraScelta'] . ':00';
+    $andataString = $dataAndata . ' ' . $oraAndata;
 
     // --- VALIDAZIONE SICUREZZA LATO SERVER ---
-    $dataPrenotata = new DateTime($dataInvio);
+
+    $dataAndataPrenotata = new DateTime($dataAndata);
+    
     $oggi = new DateTime();
     $oggi->setTime(0,0,0); // Reset orario per confrontare solo i giorni
 
@@ -36,22 +35,56 @@
     $dataMassima = clone $oggi;
     $dataMassima->modify("+" . $maxGG . " days");
 
-    if ($dataPrenotata < $dataMinima || $dataPrenotata > $dataMassima) {
+    if ($dataAndataPrenotata < $dataMinima || $dataAndataPrenotata > $dataMassima) {
         header("location: home.php?error=data_non_valida");
         exit;
     }
-    // -----------------------------------------
+    
+    // --- CALCOLO ORA RIENTRO ---
 
-    // Esecuzione Query
-    $sql = "INSERT INTO missione (id_utente, id_obiettivo, id_destinazione, data, durata,statoCompilazione) 
-            VALUES ('$idUtente', 1, '$idDestinazione', '$dataCompleta', '$durata', '$statoCompilazione')";
+    $dataClone = new DateTime($andataString);
+    
+    $ore = (int)$_POST['oreDurata'];
+    $minuti = (int)$_POST['minutiDurata'];
+    
+    // --- RIENTRO ---
+    
+    $rientro = clone $dataClone;
+    $rientro->modify("+$ore hours");
+    $rientro->modify("+$minuti minutes");
+    $rientroString = $rientro->format('Y-m-d H:i:s');
 
-    if(mysqli_query($db, $sql)){
+
+
+    // 1. Prima Insert (Andata)
+    $sqlA = "INSERT INTO missione (id_utente, id_obiettivo, id_destinazione, data, durata, statoCompilazione,tipo) 
+             VALUES ('$idUtente', 1, '$idDestinazione', '$andataString', '$durata', '$statoCompilazione','ANDATA')";
+
+
+    if(mysqli_query($db, $sqlA)){
+        // 2. Seconda Insert (Ritorno)
+        $id_andata = mysqli_insert_id($db);
+
+        $sqlR = "INSERT INTO missione (id_utente, id_obiettivo, id_destinazione, data, durata, statoCompilazione,tipo,id_collegamento) 
+             VALUES ('$idUtente', '$idDestinazione', 1, '$rientroString', '00:00:00', '$statoCompilazione','RITORNO','$id_andata')";
+        
+        if(mysqli_query($db, $sqlR)){
+            $id_ritorno = mysqli_insert_id($db);
+
+            // 3. AGGIORNAMENTO: Inseriamo l'ID del ritorno nella missione di andata
+            $sqlUpdateAndata = "UPDATE missione SET id_collegamento = '$id_ritorno' WHERE ID = '$id_andata'";
+            mysqli_query($db, $sqlUpdateAndata);
+
+            mysqli_close($db);
+            header("location: home.php?success=1");
+            exit;
+        }
+
         mysqli_close($db);
-        header("location: home.php?success=1");
+        header("location: home.php?error=db_error");
         exit;
+
     } else {
-        // Gestione errore
         mysqli_close($db);
         header("location: home.php?error=db_error");
         exit;

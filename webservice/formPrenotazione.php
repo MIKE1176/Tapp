@@ -8,21 +8,26 @@
 
     $minGG = $config['preavviso_minimo_giorni'];
     $maxGG = $config['limite_massimo_giorni'];
-    $slotMinuti = $config['slot_orari_minuti'];
+
+    $slotDurata = $config['slot_orari_minuti'];         // Step 2
+    $slotPrenotazione = $config['slot_prenotazioni'];   // Step 3
+
     $mattina = $config['orari']['mattina'];
     $pomeriggio = $config['orari']['pomeriggio'];
 
     // Funzione PHP che genera slot dinamici
-    function generaSlot($inizio, $fine, $passo) {
+    function generaSlot($inizio, $fine, $passo, $periodo) {
         $inizioSecondi = $inizio * 3600;
         $fineSecondi = $fine * 3600;
         $passoSecondi = $passo * 60;
 
         for($i = $inizioSecondi; $i < $fineSecondi; $i += $passoSecondi) {
             $time = date("H:i", $i);
+            $limiteMinuti = $fine * 60; 
             echo "
-            <div class='col text-center'>
-                <input type='radio' class='btn-check' name='oraScelta' id='t$time' value='$time' required>
+            <div class='col text-center slot-wrapper'>
+                <input type='radio' class='btn-check slot-input' name='oraScelta' 
+                       id='t$time' value='$time' data-fine='$limiteMinuti' data-periodo='$periodo' required>
                 <label class='btn btn-outline-primary w-100 py-3 fw-bold shadow-none border-2' for='t$time'>$time</label>
             </div>";
         }
@@ -47,27 +52,147 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+        .slot-input:disabled + label {
+            opacity: 0.35;
+            pointer-events: none;
+            background-color: #f8f9fa !important;
+            color: #6c757d !important;
+            border-style: dashed !important;
+        }
+        .slot-wrapper label {
+            transition: all 0.2s ease-in-out;
+        }
     </style>
     <link rel="icon" href="../assets/favicon.ico" type="image/x-icon">
     <title>Nuova prenotazione</title>
 </head>
 
 <script>
-    // Recuperiamo il valore dal PHP per usarlo in JS
-    const slotDinamico = <?php echo (isset($slotMinuti)) ? $slotMinuti : 30; ?>;
+    const controlloFineTurno = {
+        mattina: false,    // Metti TRUE se vuoi che anche la mattina sia bloccata se sfora
+        pomeriggio: true   // Metti TRUE per bloccare il pomeriggio (default)
+    };
 
-    function getMinDate() {
-        let d = new Date();
-        d.setHours(0, 0, 0, 0);
-        d.setDate(d.getDate() + <?php echo $minGG; ?>);
-        return d;
+    const slotDurata = <?php echo $slotDurata; ?>;
+    const nomiMesi = ["GENNAIO", "FEBBRAIO", "MARZO", "APRILE", "MAGGIO", "GIUGNO", "LUGLIO", "AGOSTO", "SETTEMBRE", "OTTOBRE", "NOVEMBRE", "DICEMBRE"];
+
+    function aggiornaMeseTesto() {
+        let m = parseInt(document.getElementById('meseArrivo').value);
+        if(!isNaN(m)) document.getElementById('meseArrivoDisplay').value = nomiMesi[m - 1];
     }
 
-    function getMaxDate() {
-        let d = new Date();
-        d.setHours(0, 0, 0, 0);
-        d.setDate(d.getDate() + <?php echo $maxGG; ?>);
-        return d;
+    // --- CALENDARIO CORE ---
+    function changeDate(part, delta) {
+        let g = parseInt(document.getElementById('giornoArrivo').value);
+        let m = parseInt(document.getElementById('meseArrivo').value);
+        let a = parseInt(document.getElementById('annoArrivo').value);
+        
+        // Creiamo l'oggetto data corrente basato sugli input
+        let d = new Date(a, m - 1, g);
+
+        // Applichiamo la modifica richiesta
+        if (part === 'giornoArrivo') d.setDate(d.getDate() + delta);
+        else if (part === 'meseArrivo') d.setMonth(d.getMonth() + delta);
+        else if (part === 'annoArrivo') d.setFullYear(d.getFullYear() + delta);
+
+        let minD = getMinDate();
+        let maxD = getMaxDate();
+        let avviso = document.getElementById('avvisoData');
+
+        // CONTROLLO LIMITI IMMEDIATO
+        if (d < minD) {
+            d = minD; // Blocca al minimo
+            if(avviso) {
+                avviso.innerText = "⚠️ Minimo <?php echo $minGG; ?> giorni di preavviso";
+                avviso.classList.remove('d-none');
+                setTimeout(() => avviso.classList.add('d-none'), 3000);
+            }
+        } else if (d > maxD) {
+            d = maxD; // Blocca al massimo
+            if(avviso) {
+                avviso.innerText = "⚠️ Massimo <?php echo $maxGG; ?> giorni di anticipo";
+                avviso.classList.remove('d-none');
+                setTimeout(() => avviso.classList.add('d-none'), 3000);
+            }
+        }
+
+        // Aggiorna fisicamente i campi nel form
+        document.getElementById('giornoArrivo').value = d.getDate().toString().padStart(2, '0');
+        document.getElementById('meseArrivo').value = (d.getMonth() + 1).toString().padStart(2, '0');
+        document.getElementById('annoArrivo').value = d.getFullYear();
+
+        aggiornaMeseTesto();
+    }
+
+    // --- DURATA ---
+    function changeDurata(part, delta) {
+        let el = document.getElementById(part);
+        let val = parseInt(el.value);
+        if (part === 'oreDurata') {
+            val = (val + delta + 11) % 11;
+        } else {
+            val = (val + (delta * slotDurata) + 60) % 60;
+        }
+        el.value = val.toString().padStart(2, '0');
+        validaDurata();
+        aggiornaSlotDisponibili();
+    }
+
+    // --- BLOCKING LOGIC (CORE) ---
+    function aggiornaSlotDisponibili() {
+        const ore = parseInt(document.getElementById('oreDurata').value) || 0;
+        const min = parseInt(document.getElementById('minutiDurata').value) || 0;
+        const durataTotale = (ore * 60) + min;
+
+        document.querySelectorAll('.slot-input').forEach(input => {
+            const periodo = input.dataset.periodo; // 'mattina' o 'pomeriggio'
+
+            // Se il controllo per questo specifico periodo è disattivato, abilita sempre
+            if (!controlloFineTurno[periodo]) {
+                input.disabled = false;
+                return;
+            }
+
+            // Altrimenti calcola se sfora
+            const oraInizio = input.value.split(':');
+            const inizioMinuti = (parseInt(oraInizio[0]) * 60) + parseInt(oraInizio[1]);
+            const limiteFine = parseInt(input.dataset.fine);
+
+            if (inizioMinuti + durataTotale > limiteFine) {
+                input.disabled = true;
+                input.checked = false;
+            } else {
+                input.disabled = false;
+            }
+        });
+    }
+
+    function increase(id, delta, min, max) { 
+        if (id.includes('Arrivo')) {
+            changeDate(id, 1);
+        } else {
+            changeDurata(id, 1);
+        }
+    }
+
+    function decrease(id, delta, min, max) { 
+        if (id.includes('Arrivo')) {
+            changeDate(id, -1);
+        } else {
+            changeDurata(id, -1);
+        }
+    }
+
+    // --- VALIDAZIONI ---
+
+    function getMinDate() { 
+        let d = new Date(); d.setHours(0,0,0,0); 
+        d.setDate(d.getDate() + <?php echo $minGG; ?>); return d; 
+    }
+
+    function getMaxDate() { 
+        let d = new Date(); d.setHours(0,0,0,0); 
+        d.setDate(d.getDate() + <?php echo $maxGG; ?>); return d; 
     }
 
     function validaData() {
@@ -81,15 +206,30 @@
         let avviso = document.getElementById('avvisoData');
 
         if (dataScelta < minD || dataScelta > maxD) {
-            let target = (dataScelta > maxD) ? maxD : minD;
+            // Determiniamo se ha superato il massimo o il minimo
+            let troppoTardi = dataScelta > maxD;
+            let target = troppoTardi ? maxD : minD;
+
+            // Riportiamo i valori dell'input entro i limiti
             document.getElementById('giornoArrivo').value = target.getDate().toString().padStart(2, '0');
             document.getElementById('meseArrivo').value = (target.getMonth() + 1).toString().padStart(2, '0');
             document.getElementById('annoArrivo').value = target.getFullYear();
             
-            if(avviso) {
-                avviso.innerText = (dataScelta > maxD) ? "⚠️ Massimo <?php echo $maxGG; ?> giorni di anticipo" : "⚠️ Minimo <?php echo $minGG; ?> giorni di anticipo";
+            // Aggiorniamo il testo del mese (es: da "02" a "FEBBRAIO")
+            aggiornaMeseTesto();
+
+            if (avviso) {
+                // Messaggio personalizzato con i giorni configurati nel JSON
+                avviso.innerText = troppoTardi 
+                    ? "⚠️ Massimo <?php echo $maxGG; ?> giorni di anticipo" 
+                    : "⚠️ Minimo <?php echo $minGG; ?> giorni di anticipo";
+                
                 avviso.classList.remove('d-none');
-                setTimeout(() => avviso.classList.add('d-none'), 3000);
+                
+                // Nascondi l'avviso dopo 3 secondi
+                setTimeout(() => {
+                    avviso.classList.add('d-none');
+                }, 3000);
             }
             return false;
         }
@@ -100,21 +240,10 @@
         let ore = parseInt(document.getElementById('oreDurata').value);
         let min = parseInt(document.getElementById('minutiDurata').value);
         let btn = document.getElementById('btnVaiAOrario');
-        let avviso = document.getElementById('avvisoDurata');
-
-        // Se entrambi sono a 0, disabilita (durata minima deve essere almeno uno slot)
-        if (ore === 0 && min === 0) {
-            btn.disabled = true;
-            if(avviso) {
-                avviso.innerText = "⚠️ Inserire una durata!";
-                avviso.classList.remove('d-none');
-            }
-        } else {
-            btn.disabled = false;
-            if(avviso) avviso.classList.add('d-none');
-        }
+        btn.disabled = (ore === 0 && min === 0);
     }
 
+    // --- NAVIGAZIONE ---
     function vaiAData(idLuogoValue) {
         document.getElementById('idLuogo').value = idLuogoValue;
         document.getElementById('faseLuogo').classList.add('d-none');
@@ -125,7 +254,7 @@
         document.getElementById('giornoArrivo').value = min.getDate().toString().padStart(2, '0');
         document.getElementById('meseArrivo').value = (min.getMonth() + 1).toString().padStart(2, '0');
         document.getElementById('annoArrivo').value = min.getFullYear();
-        
+        aggiornaMeseTesto();
         validaDurata();
         window.scrollTo(0,0);
     }
@@ -134,63 +263,29 @@
         document.getElementById('faseDataDurata').classList.add('d-none');
         document.getElementById('faseOrario').classList.remove('d-none');
         document.getElementById('bottoneIndietro').value = "faseOrario";
+        aggiornaSlotDisponibili();
         window.scrollTo(0,0);
     }
 
-    function increase(idInput, step, min, max) {
-        let input = document.getElementById(idInput);
-        let val = parseInt(input.value, 10);
-        
-        // Se l'ID è minutiDurata, ignoriamo lo step passato nel tag e usiamo quello del JSON
-        let actualStep = (idInput === 'minutiDurata') ? slotDinamico : step;
-
-        if (val + actualStep < max) {
-            input.value = (val + actualStep).toString().padStart(2, '0');
-        } else {
-            input.value = min.toString().padStart(2, '0');
-        }
-        if (idInput.includes('Arrivo')) validaData();
-        validaDurata();
-    }
-
-    function decrease(idInput, step, min, max) {
-        let input = document.getElementById(idInput);
-        let val = parseInt(input.value, 10);
-        
-        let actualStep = (idInput === 'minutiDurata') ? slotDinamico : step;
-
-        if (val - actualStep >= min) {
-            input.value = (val - actualStep).toString().padStart(2, '0');
-        } else {
-            // Se scende sotto il minimo, ricomincia dal massimo meno uno step
-            let res = max - actualStep;
-            input.value = res.toString().padStart(2, '0');
-        }
-        if (idInput.includes('Arrivo')) validaData();
-        validaDurata();
-    }
-
-    function filtraLuoghi() {
-        let input = document.getElementById('searchBar');
-        let filter = input.value.toLowerCase();
-        let cards = document.getElementsByClassName('card-luogo');
-        for (let i = 0; i < cards.length; i++) {
-            let title = cards[i].querySelector('.card-title').innerText.toLowerCase();
-            cards[i].classList.toggle('d-none', !title.includes(filter));
-        }
-    }
-
     function hideBack(currentStep) {
-        if (currentStep == "faseLuogo") {
-            window.location.href = 'home.php';
-        } else if (currentStep == "faseDataDurata") {
+        if (currentStep == "faseLuogo") window.location.href = 'home.php';
+        else if (currentStep == "faseDataDurata") {
             document.getElementById('faseDataDurata').classList.add('d-none');
             document.getElementById('faseLuogo').classList.remove('d-none');
             document.getElementById('bottoneIndietro').value = "faseLuogo";
-        } else if (currentStep == "faseOrario") {
+        } else {
             document.getElementById('faseOrario').classList.add('d-none');
             document.getElementById('faseDataDurata').classList.remove('d-none');
             document.getElementById('bottoneIndietro').value = "faseDataDurata";
+        }
+    }
+
+    function filtraLuoghi() {
+        let filter = document.getElementById('searchBar').value.toLowerCase();
+        let cards = document.getElementsByClassName('card-luogo');
+        for (let card of cards) {
+            let title = card.querySelector('.card-title').innerText.toLowerCase();
+            card.classList.toggle('d-none', !title.includes(filter));
         }
     }
 </script>
@@ -246,26 +341,31 @@
                 <div class="bg-white p-3 rounded-5 border border-3 border-primary shadow mb-4">
                     <h4 class="text-primary text-center fw-bold mb-1">Scegli il giorno</h4>
                     <div class="row g-2">
-                        <div class="col-4 text-center">
+                        <div class="col-3 text-center">
+                            <div class="small fw-bold opacity-50">GIORNO</div>
                             <button type="button" class="btn btn-primary w-100 mb-2 shadow-none" onclick="increase('giornoArrivo', 1, 1, 31)"><i class="bi bi-plus-lg h4"></i></button>
                             <input class="form-control-plaintext text-center h2 fw-bold p-0 text-dark" id="giornoArrivo" name="giornoArrivo" readonly>
                             <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('giornoArrivo', 1, 1, 31)"><i class="bi bi-dash h4"></i></button>
-                            <div class="small fw-bold opacity-50">GIORNO</div>
                         </div>
-                        <div class="col-4 text-center">
-                            <button type="button" class="btn btn-primary w-100 mb-2 shadow-none" onclick="increase('meseArrivo', 1, 1, 12)"><i class="bi bi-plus-lg h4"></i></button>
-                            <input class="form-control-plaintext text-center h2 fw-bold p-0 text-dark" id="meseArrivo" name="meseArrivo" readonly>
-                            <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('meseArrivo', 1, 1, 12)"><i class="bi bi-dash h4"></i></button>
+
+                        <div class="col-6 text-center">
                             <div class="small fw-bold opacity-50">MESE</div>
+                            <button type="button" class="btn btn-primary w-100 mb-2 shadow-none" onclick="increase('meseArrivo', 1, 1, 13)"><i class="bi bi-plus-lg h4"></i></button>
+                            <input type="hidden" id="meseArrivo" name="meseArrivo">
+                            <input class="form-control-plaintext text-center h2 fw-bold p-0 text-dark" id="meseArrivoDisplay" readonly>
+                            <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('meseArrivo', 1, 1, 13)"><i class="bi bi-dash h4"></i></button>
                         </div>
-                        <div class="col-4 text-center">
-                            <button type="button" class="btn btn-primary w-100 mb-2 shadow-none" onclick="increase('annoArrivo', 1, 2024, 2030)"><i class="bi bi-plus-lg h4"></i></button>
-                            <input class="form-control-plaintext text-center h2 fw-bold p-0 text-dark" id="annoArrivo" name="annoArrivo" readonly>
-                            <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('annoArrivo', 1, 2024, 2030)"><i class="bi bi-dash h4"></i></button>
+
+                        <div class="col-3 text-center">
                             <div class="small fw-bold opacity-50">ANNO</div>
+                            <button type="button" class="btn btn-primary w-100 mb-2 shadow-none" onclick="increase('annoArrivo', 1, 2026, 2030)"><i class="bi bi-plus-lg h4"></i></button>
+                            <input class="form-control-plaintext text-center h2 fw-bold p-0 text-dark" id="annoArrivo" name="annoArrivo" readonly>
+                            <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('annoArrivo', 1, 2026, 2030)"><i class="bi bi-dash h4"></i></button>
                         </div>
                     </div>
-                    <p id="avvisoData" class="text-danger text-center fw-bold small mt-2 d-none"></p>
+                    <div id="avvisoData" class="alert alert-warning text-center fw-bold d-none rounded-4 border-0 mt-3 mb-3 shadow">
+                        Avviso
+                    </div>
                 </div>
 
                 <div class="bg-white p-3 rounded-5 border border-3 border-primary shadow mb-4">
@@ -284,7 +384,6 @@
                             <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('minutiDurata', 0, 0, 60)"><i class="bi bi-dash h3"></i></button>
                         </div>
                     </div>
-                    <p id="avvisoDurata" class="text-danger text-center fw-bold h5 mt-2 d-none"></p>
                 </div>
 
                 <button type="button" id="btnVaiAOrario" class="btn btn-warning w-100 py-4 fs-2 rounded-4 border border-4 border-white shadow-lg fw-bold text-uppercase" onclick="vaiAOrario()">
@@ -299,12 +398,12 @@
                 <div class="bg-white p-3 rounded-5 border border-3 border-primary shadow">
                     <h5 class="text-primary fw-bold text-center border-bottom pb-2 text-uppercase">Mattina</h5>
                     <div class="row row-cols-3 g-2 mb-4">
-                        <?php generaSlot($mattina['inizio'], $mattina['fine'], $slotMinuti); ?>
+                        <?php generaSlot($mattina['inizio'], $mattina['fine'], $slotPrenotazione, 'mattina'); ?>
                     </div>
 
                     <h5 class="text-primary fw-bold text-center border-bottom pb-2 text-uppercase">Pomeriggio</h5>
                     <div class="row row-cols-3 g-2 mb-2">
-                        <?php generaSlot($pomeriggio['inizio'], $pomeriggio['fine'], $slotMinuti); ?>
+                        <?php generaSlot($pomeriggio['inizio'], $pomeriggio['fine'], $slotPrenotazione, 'pomeriggio'); ?>
                     </div>
                 </div>
 

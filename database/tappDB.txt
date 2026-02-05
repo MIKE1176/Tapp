@@ -13,7 +13,7 @@ create table turno(ID int auto_increment, dataInizio datetime, dataFine datetime
 
 create table utente(ID int auto_increment,CF varchar(20),nome varchar(30),cognome varchar(30),dataNascita date,luogoNascita varchar(30),sesso varchar(1),indirizzo varchar(30),civico varchar(5),citta varchar(30), telefono bigint, noteUtente longtext, username longtext, password longtext, attivo bool, PRIMARY KEY(ID));
 
-create table missione(ID int auto_increment,statoCompilazione enum("INSERITA","ASSEGNATA","COMPLETATA", "ANNULLATA"), data datetime, durata time, annotazioni longtext, id_obiettivo int,id_destinazione int,id_turno int,id_utente int,PRIMARY KEY(ID),FOREIGN KEY(id_obiettivo) REFERENCES luogo(ID),FOREIGN KEY(id_destinazione) REFERENCES luogo(ID),FOREIGN KEY(id_utente) REFERENCES utente(ID), FOREIGN KEY(id_turno) REFERENCES turno(ID));
+create table missione(ID int auto_increment,statoCompilazione enum("INSERITA","ASSEGNATA","COMPLETATA", "ANNULLATA"), data datetime, durata time, tipo enum("ANDATA","RITORNO","UNICO"), annotazioni longtext, id_collegamento int, id_obiettivo int,id_destinazione int,id_turno int,id_utente int,PRIMARY KEY(ID),FOREIGN KEY(id_obiettivo) REFERENCES luogo(ID),FOREIGN KEY(id_destinazione) REFERENCES luogo(ID),FOREIGN KEY(id_utente) REFERENCES utente(ID), FOREIGN KEY(id_turno) REFERENCES turno(ID));
 
 create table evento(ID int auto_increment,dataOra datetime,tipo enum("PARTENZA","OBIETTIVO","DESTINAZIONE","FINE","RIENTRO"),id_missione int,PRIMARY KEY(ID),FOREIGN KEY(id_missione) REFERENCES missione(ID));
 
@@ -50,4 +50,4 @@ insert into turno(dataInizio,dataFine) values(20000101000000,20000101000001); --
 
 -- Dati6: missione
 
-insert into missione (id_utente,id_obiettivo,id_destinazione,data,durata,statoCompilazione) VALUES (1,1,3,20260206160000,010000,"INSERITA");
+insert into missione (id_utente,id_obiettivo,id_destinazione,data,durata,statoCompilazione,tipo) VALUES (1,1,3,20260206160000,010000,"INSERITA","ANDATA");

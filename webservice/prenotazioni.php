@@ -58,7 +58,7 @@
         <div class="vstack gap-3 d-flex justify-content-center py-4">
         <?php
             // Query per le missioni future
-            $query = mysqli_query($db, "SELECT missione.id AS idPrenotazione, obiettivo.denominazione AS nomeObiettivo, destinazione.denominazione AS nomeDestinazione, data, TIME_FORMAT(`durata`, '%H:%i') AS durata, statoCompilazione FROM missione JOIN luogo AS obiettivo ON id_obiettivo = obiettivo.id JOIN luogo AS destinazione ON id_destinazione = destinazione.id WHERE data >= NOW() AND id_utente = '$idUtente' ORDER BY data ASC");
+            $query = mysqli_query($db, "SELECT missione.id AS idPrenotazione, obiettivo.denominazione AS nomeObiettivo, destinazione.denominazione AS nomeDestinazione, data, TIME_FORMAT(`durata`, '%H:%i') AS durata, statoCompilazione, tipo FROM missione JOIN luogo AS obiettivo ON id_obiettivo = obiettivo.id JOIN luogo AS destinazione ON id_destinazione = destinazione.id WHERE data >= NOW() AND id_utente = '$idUtente' AND tipo!='RITORNO' ORDER BY data ASC");
 
             if (mysqli_num_rows($query) != 0) {
                 // Prepariamo la data di oggi "pulita" (senza ore/minuti)
@@ -75,7 +75,12 @@
                     
                     $dataOggetto = DateTime::createFromFormat('Y-m-d H:i:s', $row['data']);
                     $dataFormattata = $dataOggetto->format('d/m/Y H:i');
-                    $durata = $row['durata'];
+
+                    $durata = $row['durata']; // Ora vale ad esempio "01:30"
+                    $durataOggetto = DateTime::createFromFormat('H:i', $durata);
+                    $durataOre = $durataOggetto->format('H');
+                    $durataMinuti = $durataOggetto->format('i');
+
                     $statoCompilazione = $row['statoCompilazione'];
 
                     // Calcolo giorni di differenza sulla data pura (senza ore)
@@ -86,22 +91,31 @@
                     $intervallo = $oggi->diff($dataPrenotazionePura);
                     $giorniMancanti = (int)$intervallo->format('%r%a'); // %r include il segno (+ o -)
 
+                    $dataRientro = clone $dataOggetto;
+
+                    // Aggiungiamo le ore e i minuti della durata
+                    $dataRientro->modify("+{$durataOre} hours");
+                    $dataRientro->modify("+{$durataMinuti} minutes");
+
+                    // Ora puoi formattarla come preferisci
+                    $orarioRientro = $dataRientro->format('H:i');
+
                     // Logica Annullamento
                     $htmlAnnulla = "";
-                    if ($giorniMancanti > $limiteDisdetta) {
+                    if ($statoCompilazione=="ANNULLATA") {
                         // Se mancano PIÙ giorni del limite (es. se limite è 1, deve mancare almeno 2 giorni)
-                        $htmlAnnulla = <<<HTML
-                        <form action="eliminaPrenotazione.php" method="post" class="mt-3">
-                            <input type="hidden" name="idPrenotazione" value="$idPrenotazione">
-                            <button type="submit" class="btn btn-outline-danger w-100 rounded-3 fw-bold py-2" onclick="return confirm('Sei sicuro di voler annullare?')">ANNULLA PRENOTAZIONE</button>
-                        </form>
-HTML;
-                    } else if($statoCompilazione=="ANNULLATA"){
-                        // Se mancano 1 o 0 giorni
                         $htmlAnnulla = <<<HTML
                         <div class="alert alert-error small py-2 mt-2 mb-0 rounded-3 text-center border-0 fw-bold">
                             <p id="avvisoData" class="text-danger text-center fw-bold small mt-2 mb-2">⚠️ PRENOTAZIONE ANNULLATA</p>
                         </div>
+HTML;
+                    } else if($giorniMancanti > $limiteDisdetta){
+                        // Se mancano 1 o 0 giorni
+                        $htmlAnnulla = <<<HTML
+                        <form action="annullaPrenotazione.php" method="post" class="mt-3">
+                            <input type="hidden" name="idPrenotazione" value="$idPrenotazione">
+                            <button type="submit" class="btn btn-outline-danger w-100 rounded-3 fw-bold py-2" onclick="return confirm('Sei sicuro di voler annullare?')">ANNULLA PRENOTAZIONE</button>
+                        </form>
                         
 HTML;
                     }else {
@@ -118,13 +132,18 @@ HTML;
                         <div class="card-body p-1">
                             <h4 class="fw-bold mb-1 text-danger">$dataFormattata</h4>
                             <h5 class="mb-3 text-dark">$nomeDestinazione</h5>
-                            
+HTML;
+                            if ($statoCompilazione!="ANNULLATA") {
+                                echo <<<HTML
                             <div class="small text-secondary mb-3">
-                                <i class="bi bi-clock"></i> Durata: <strong>$durata ore</strong><br>
+                                <i class="bi bi-clock"></i> Durata: <strong>$durataOre ore e $durataMinuti minuti.</strong><br>
                                 <i class="bi bi-geo-alt"></i> Da: $nomeObiettivo<br>
-                                <i class="bi bi-info-circle"></i> Stato: $statoCompilazione
+                                <i class="bi bi-info-circle"></i> Stato: $statoCompilazione<br><br>
+                                <i class="bi bi-geo-fill"></i>Verremo a riprenderti alle  $orarioRientro
                             </div>
-
+HTML;                       
+                            }
+                            echo <<<HTML
                             $htmlAnnulla
                         </div>
                     </div>

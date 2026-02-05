@@ -23,7 +23,7 @@
   include('./navbar.php');
   $idOperatore = $_SESSION['ID'];
 
-  $queryNMissioni = "SELECT * FROM operatore JOIN turno ON $idOperatore=turno.id_operatore JOIN missione ON turno.ID=missione.id_turno WHERE operatore.ID = $idOperatore and DATE(missione.partenza)=CURDATE()"; 
+  $queryNMissioni = "SELECT * FROM operatore JOIN turno ON $idOperatore=turno.id_operatore JOIN missione ON turno.ID=missione.id_turno WHERE operatore.ID = $idOperatore and DATE(missione.data)=CURDATE()"; 
   $nMissioni = mysqli_query($db, $queryNMissioni);
 
   $queryNTurno = "SELECT * FROM operatore JOIN turno ON $idOperatore=turno.id_operatore WHERE operatore.ID = $idOperatore AND (DATE(turno.dataInizio) = CURDATE() OR DATE(turno.dataInizio) = DATE_ADD(CURDATE(), INTERVAL 1 DAY))";

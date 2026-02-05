@@ -27,6 +27,6 @@
    }
 
    // 4. Redirect e stop dello script
-   header("Location: index.php");
+   header("Location: accedi.php");
    exit;
 ?>
