@@ -2,6 +2,10 @@
     include("./session.php");
     check_auth(); // Se NON sono loggato, mi manda a accedi.php
     $idUtente = $_SESSION['ID'];
+    
+    $configPath = '../config_orari.json';
+    $config = json_decode(file_get_contents($configPath), true);
+    $limiteDisdetta = isset($config['limite_disdetta_giorni']) ? (int)$config['limite_disdetta_giorni'] : 1; // Default 2 se manca nel JSON
 ?>
 <!DOCTYPE html>
 <html lang="it">
@@ -30,86 +34,130 @@
 
 <body class="ubuntu-regular" style="background-color: rgb(187, 0, 0);">
 
-    <div class="d-flex align-items-center m-4 bg-danger-subtle rounded-5 p-1">
-        <button class="btn btn-danger rounded-5 w-100" onclick="window.location.href='home.php'">
+    <div class="d-flex align-items-center m-4 bg-danger-subtle rounded-5 p-1 border border-2 border-white">
+        <button class="btn btn-danger rounded-5 w-100 shadow-none border-0" onclick="window.location.href='home.php'">
             <div class="hstack d-flex align-items-center">
                 <i class="bi bi-arrow-bar-left h1 m-0 p-0"></i>
                 <div class="vr ms-3"></div>
                 <div class="d-flex w-100 justify-content-center">
-                    <p class="m-0 p-0 h1">Indietro</p>
+                    <p class="m-0 p-0 h1 fw-bold text-uppercase">Indietro</p>
                 </div>
             </div>
         </button>
     </div>
 
-    <div class="m-4 bg-light rounded-5 p-4">
-        <h2>Prenotazioni attive</h2>
-        <hr class="m-0">
+    <div class="m-4 bg-light rounded-5 p-4 shadow-lg">
+        <h2 class="fw-bold text-danger text-uppercase">Prenotazioni attive</h2>
+        <hr>
+        <div class="bg-danger rounded-3 p-3 mb-2 border border-white text-center shadow-sm">
+            <p class="m-0 small fw-bold text-white">
+                <i class="bi bi-exclamation-circle-fill"></i> 
+                Fatti trovare pronto circa 15 minuti prima dell'orario indicato.
+            </p>
+        </div>
         <div class="vstack gap-3 d-flex justify-content-center py-4">
         <?php
-        $query = mysqli_query($db, "select prenotazione.id as idPrenotazione, obiettivo.nome as nomeObiettivo, destinazione.nome as nomeDestinazione, data, TIME_FORMAT(`durata`, '%H:%i') as durata, scopo.nome as nomeScopo from prenotazione join scopo on idScopo = scopo.id join puntoInteresse as obiettivo on idObiettivo = obiettivo.id join puntoInteresse as destinazione on idDestinazione = destinazione.id where data >= NOW() and idPaziente = '$idUtente'");
-        if (mysqli_num_rows($query) != 0) {
-            while ($row = mysqli_fetch_assoc($query)) {
-                $idPrenotazione = $row['idPrenotazione'];
-                $nomeObiettivo = (isset($row['nomeObiettivo'])) ? $row['nomeObiettivo'] : "La tua abitazione";
-                $nomeDestinazione = $row['nomeDestinazione'];
-                $data = DateTime::createFromFormat('Y-m-d H:i:s', $row['data']) -> format('d/m/Y H:i');
-                $durata = $row['durata'];
-                $scopo = (isset($row['nomeScopo'])) ? $row['nomeScopo'] : 1;
-                $HTML = <<<HTML
-                <div class="card p-2 w-100 border-0 rounded-5 bg-danger-subtle" style="width: 18rem;">
-                    <div class="card-body">
-                        <h5 class="card-title">$scopo - $data</h5>
-                        <h6 class="card-subtitle mb-2 text-body-secondary">$durata ore</h6>
-                        <p class="card-text">Trasporto da $nomeObiettivo a $nomeDestinazione</p>
-                        <form action="eliminaPrenotazione.php" method="post">
-                            <input type="number" class="d-none" name="idPrenotazione" value="$idPrenotazione">
-                            <button type="submit" class="btn btn-danger w-100">Annulla</button>
+            // Query per le missioni future
+            $query = mysqli_query($db, "SELECT missione.id AS idPrenotazione, obiettivo.denominazione AS nomeObiettivo, destinazione.denominazione AS nomeDestinazione, data, TIME_FORMAT(`durata`, '%H:%i') AS durata, statoCompilazione FROM missione JOIN luogo AS obiettivo ON id_obiettivo = obiettivo.id JOIN luogo AS destinazione ON id_destinazione = destinazione.id WHERE data >= NOW() AND id_utente = '$idUtente' ORDER BY data ASC");
+
+            if (mysqli_num_rows($query) != 0) {
+                // Prepariamo la data di oggi "pulita" (senza ore/minuti)
+                $oggi = new DateTime();
+                $oggi->setTime(0, 0, 0);
+
+                while ($row = mysqli_fetch_assoc($query)) {
+                    $idPrenotazione = $row['idPrenotazione'];
+                    $nomeObiettivo = (isset($row['nomeObiettivo'])) ? $row['nomeObiettivo'] : "La tua abitazione";
+                    if($nomeObiettivo == "Abitazione dell'utente"){
+                        $nomeObiettivo="La tua abitazione";
+                    }
+                    $nomeDestinazione = $row['nomeDestinazione'];
+                    
+                    $dataOggetto = DateTime::createFromFormat('Y-m-d H:i:s', $row['data']);
+                    $dataFormattata = $dataOggetto->format('d/m/Y H:i');
+                    $durata = $row['durata'];
+                    $statoCompilazione = $row['statoCompilazione'];
+
+                    // Calcolo giorni di differenza sulla data pura (senza ore)
+                    $dataPrenotazionePura = clone $dataOggetto;
+                    $dataPrenotazionePura->setTime(0, 0, 0);
+                    
+                    // Usiamo questo metodo per avere la differenza esatta di giorni di calendario
+                    $intervallo = $oggi->diff($dataPrenotazionePura);
+                    $giorniMancanti = (int)$intervallo->format('%r%a'); // %r include il segno (+ o -)
+
+                    // Logica Annullamento
+                    $htmlAnnulla = "";
+                    if ($giorniMancanti > $limiteDisdetta) {
+                        // Se mancano PIÙ giorni del limite (es. se limite è 1, deve mancare almeno 2 giorni)
+                        $htmlAnnulla = <<<HTML
+                        <form action="eliminaPrenotazione.php" method="post" class="mt-3">
+                            <input type="hidden" name="idPrenotazione" value="$idPrenotazione">
+                            <button type="submit" class="btn btn-outline-danger w-100 rounded-3 fw-bold py-2" onclick="return confirm('Sei sicuro di voler annullare?')">ANNULLA PRENOTAZIONE</button>
                         </form>
+HTML;
+                    } else if($statoCompilazione=="ANNULLATA"){
+                        // Se mancano 1 o 0 giorni
+                        $htmlAnnulla = <<<HTML
+                        <div class="alert alert-error small py-2 mt-2 mb-0 rounded-3 text-center border-0 fw-bold">
+                            <p id="avvisoData" class="text-danger text-center fw-bold small mt-2 mb-2">⚠️ PRENOTAZIONE ANNULLATA</p>
+                        </div>
+                        
+HTML;
+                    }else {
+                        // Se mancano 1 o 0 giorni
+                        $htmlAnnulla = <<<HTML
+                        <div class="alert alert-warning small py-2 mt-3 mb-0 rounded-3 text-center border-0 fw-bold">
+                            <i class="bi bi-info-circle"></i> Non è più possibile disdire.<br>
+                        </div>
+HTML;
+                    }
+
+                    echo <<<HTML
+                    <div class="card p-3 w-100 border-0 rounded-4 bg-danger-subtle shadow-sm">
+                        <div class="card-body p-1">
+                            <h4 class="fw-bold mb-1 text-danger">$dataFormattata</h4>
+                            <h5 class="mb-3 text-dark">$nomeDestinazione</h5>
+                            
+                            <div class="small text-secondary mb-3">
+                                <i class="bi bi-clock"></i> Durata: <strong>$durata ore</strong><br>
+                                <i class="bi bi-geo-alt"></i> Da: $nomeObiettivo<br>
+                                <i class="bi bi-info-circle"></i> Stato: $statoCompilazione
+                            </div>
+
+                            $htmlAnnulla
+                        </div>
                     </div>
-                </div>
-                HTML;
-                echo $HTML;
+HTML;
+                }
+            } else {
+                echo '<p class="text-center opacity-50 p-4">Non hai nessuna prenotazione attiva</p>';
             }
-        }else{
-            echo <<<HTML
-                <div class="d-flex justify-content-center p-5">
-                    <p>Non hai nessuna prenotazione attiva</p>
-                </div>
-            HTML;
-        }
         ?>
         </div>
-        <h2>Prenotazioni precedenti</h2>
-        <hr class="m-0">
-        <div class="vstack gap-3 d-flex justify-content-center py-4">
+
+        <h2 class="fw-bold mt-4 text-uppercase">Storico</h2>
+        <hr>
+        <div class="vstack gap-2 d-flex justify-content-center py-4">
         <?php
-        $query = mysqli_query($db, "select prenotazione.id as idPrenotazione, obiettivo.nome as nomeObiettivo, destinazione.nome as nomeDestinazione, data, durata, scopo.nome as nomeScopo from prenotazione join scopo on idScopo = scopo.id join puntoInteresse as obiettivo on idObiettivo = obiettivo.id join puntoInteresse as destinazione on idDestinazione = destinazione.id where data < NOW() and idPaziente = '$idUtente'");
-        if (mysqli_num_rows($query) != 0) {
-            while ($row = mysqli_fetch_assoc($query)) {
-                $nomeObiettivo = $row['nomeObiettivo'];
-                $nomeDestinazione = $row['nomeDestinazione'];
-                $data = DateTime::createFromFormat('Y-m-d H:i:s', $row['data']) -> format('d/m/Y H:i');
-                $durata = $row['durata'];
-                $scopo = $row['nomeScopo'];
-                $HTML = <<<HTML
-                <div class="card p-2 w-100 border-0 rounded-5 bg-danger-subtle" style="width: 18rem;">
-                    <div class="card-body">
-                        <h5 class="card-title">$scopo - $data</h5>
-                        <h6 class="card-subtitle mb-2 text-body-secondary">$durata ore</h6>
-                        <p class="card-text">Trasporto da $nomeObiettivo a $nomeDestinazione</p>
+            $query_storico = mysqli_query($db, "SELECT missione.id AS idPrenotazione, obiettivo.denominazione AS nomeObiettivo, destinazione.denominazione AS nomeDestinazione, data, statoCompilazione FROM missione JOIN luogo AS obiettivo ON id_obiettivo = obiettivo.id JOIN luogo AS destinazione ON id_destinazione = destinazione.id WHERE data < NOW() AND id_utente = '$idUtente' ORDER BY data DESC LIMIT 5");
+            
+            if (mysqli_num_rows($query_storico) != 0) {
+                while ($row = mysqli_fetch_assoc($query_storico)) {
+                    $nomeDestinazione = $row['nomeDestinazione'];
+                    $data = DateTime::createFromFormat('Y-m-d H:i:s', $row['data'])->format('d/m/Y');
+                    $statoCompilazione=$row['statoCompilazione'];
+                    echo <<<HTML
+                    <div class="card p-2 w-100 border-0 rounded-4 bg-secondary-subtle opacity-75">
+                        <div class="card-body py-1 small">
+                            <span class="fw-bold">$data</span> - $nomeDestinazione
+                        </div>
                     </div>
-                </div>
-                HTML;
-                echo $HTML;
+HTML;
+                }
+            } else {
+                echo '<p class="text-center opacity-50 small">Nessuna prenotazione passata</p>';
             }
-        }else{
-            echo <<<HTML
-                <div class="d-flex justify-content-center p-5">
-                    <p>Non hai nessuna prenotazione precedente</p>
-                </div>
-            HTML;
-        }
         ?>
         </div>
     </div>

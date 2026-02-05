@@ -1,0 +1,11 @@
+{
+  "giorni_attivi": [1, 2, 3, 4, 5], 
+  "orari": {
+    "mattina": { "inizio": 9, "fine": 13.10 },
+    "pomeriggio": { "inizio": 15, "fine": 19.10 }
+  },
+  "preavviso_minimo_giorni": 3,
+  "limite_massimo_giorni": 30,
+  "limite_disdetta_giorni":1,
+  "slot_orari_minuti": 30
+}
