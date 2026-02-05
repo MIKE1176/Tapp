@@ -1,13 +1,8 @@
 <?php
-   include('config.php');
-   session_name("webservice");
-   session_start();
-
-   if(isset($_SESSION['id']) && isset($_SESSION['sessione']) && $_SESSION['sessione'] === 'webservice'){ // Verifica se l'utente ha già effettuato l'accesso, se sì, reindirizza alla pagina di benvenuto
-      header('Location: home.php');
-      exit;
-   }
+    include("./session.php");
+    check_auth(true); // Se sono già loggato, mi manda a home.php
 ?>
+
 
 <!DOCTYPE html>
 <html lang="it">
@@ -30,7 +25,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
     </style>
 
-    <link rel="icon" href="../assets/favicon.png" type="image/x-icon">
+    <link rel="icon" href="../assets/favicon.ico" type="image/x-icon">
     <title>Accesso - Tapp Servizi Web</title>
 </head>
 

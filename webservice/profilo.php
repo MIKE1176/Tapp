@@ -1,8 +1,8 @@
 <?php
-    include ("session.php");
-    $idUtente = $_SESSION['id'];
+    include("./session.php");
+    check_auth(); // Se NON sono loggato, mi manda a accedi.php
+    $idUtente = $_SESSION['ID'];
 ?>
-
 <!DOCTYPE html>
 <html lang="it">
 
@@ -43,12 +43,12 @@
     </div>
 
     <?php
-    $query = mysqli_query($db, "select utente.nome as nomeUtente, cognome, dataNascita, via, civico, capCitta, citta.nome as nomeCitta from utente join citta on capCitta = cap where utente.id = '$idUtente';");
+    $query = mysqli_query($db, "select utente.nome as nomeUtente, cognome, dataNascita, indirizzo, civico, citta from utente where utente.id = '$idUtente';");
     if (mysqli_num_rows($query) != 0) {
         while ($row = mysqli_fetch_assoc($query)) {
             $nominativo = $row['nomeUtente'] . ' ' . $row['cognome'];
             $data = DateTime::createFromFormat('Y-m-d', $row['dataNascita'])->format('d/m/Y');
-            $residenza = $row['via'] . ' ' . $row['civico'] . ', ' . $row['nomeCitta'] . ' ' . $row['capCitta'];
+            $residenza = $row['indirizzo'] . ' ' . $row['civico'] . ', ' . $row['citta'];
             $HTML = <<<HTML
             <div class="vstack gap-3 m-4">
                 <div class="p-4 d-block align-items-center bg-light-subtle rounded-5">
@@ -65,36 +65,6 @@
                     <h3 class="m-0 p-0 fw-bold">RESIDENZA</h3>
                     <hr class="mt-0">
                     <h4 class="m-0 p-0 ubuntu-regular">$residenza</h4>
-                </div>
-                <div class="p-4 d-block align-items-center bg-light-subtle rounded-5">
-                    <h3 class="m-0 p-0 fw-bold">TESSERE ASSOCIAZIONI</h3>
-                    <hr class="mt-0">
-            HTML;
-            $associazioni = mysqli_query($db, "select numero, associazione.nome as nomeAssociazione from tessera join associazione on idAssociazione = associazione.id where idUtente = '$idUtente'");
-            if (mysqli_num_rows($associazioni) != 0) {
-                $HTML .= <<<HTML
-                    <ul style="list-style: square outside url('./assets/icons/caret-right-fill.svg')" class='ps-4'>
-                HTML;
-                while ($row = mysqli_fetch_assoc($associazioni)) {
-                    $associazione = $row['nomeAssociazione'];
-                    $numeroTessera = $row['numero'];
-                    $HTML .= <<<HTML
-                        <li class="ubuntu-regular">
-                            <h4 class="m-0 mt-3 p-0">$associazione</h4>
-                            <h5 class="text-muted">(Tessera #$numeroTessera)</h5>
-                        </li>
-                    HTML;
-                }
-                $HTML .= <<<HTML
-                    </ul>
-                HTML;
-            } else {
-                $HTML .= <<<HTML
-                    <h4 class="m-0 p-0 ubuntu-regular">Non sei affiliato con nessuna associazione</h4>
-                HTML;
-            }
-
-            $HTML .= <<<HTML
                 </div>
                 <div class="row">
                     <div class="col">

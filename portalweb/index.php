@@ -1,4 +1,7 @@
-<?php include('./session.php');?>
+<?php
+  include("session.php");
+  check_auth(); // Se non loggato o non attivo, scappa e va al login
+?>
 
 <!DOCTYPE html>
 <html lang="it">
@@ -11,14 +14,14 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
     crossorigin="anonymous"></script>
-  <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
   <title>Tapp - Home</title>
 </head>
 
 <body>
   <?php
   include('./navbar.php');
-  $idOperatore = $_SESSION['ID_operatore'];
+  $idOperatore = $_SESSION['ID'];
 
   $queryNMissioni = "SELECT * FROM operatore JOIN turno ON $idOperatore=turno.id_operatore JOIN missione ON turno.ID=missione.id_turno WHERE operatore.ID = $idOperatore and DATE(missione.partenza)=CURDATE()"; 
   $nMissioni = mysqli_query($db, $queryNMissioni);
@@ -45,17 +48,17 @@
 
   <div class="d-block text-center">
     <div class="container">
-      <div class="row align-text-center mt-3">
+      <div class="row align-text-center mt-2">
         <div class="col">
-          <h1>Benvenuto, <?php  echo $_SESSION['nome_operatore']?>!</h1>
+          <h1>Benvenuto, <?php  echo $_SESSION['nome']?>!</h1>
         </div>
       </div>
-      <div class="row align-content-center mt-3">
+      <div class="row align-content-center mt-2">
         <div class="col-6 col-xl-3 mx-auto">
           <img src="../assets/icons/logo.jpg" class="img-fluid">
         </div>
       </div>
-      <div class="row justify-content-center mt-5">
+      <div class="row justify-content-center mt-2">
         <div class="col-12 col-md-6 mb-4">
           <div class="card p-3 shadow">
             <h2>I tuoi turni</h2>

@@ -1,6 +1,7 @@
 <?php
-    include("session.php");
-    $idUtente = $_SESSION['id'];
+    include("./session.php");
+    check_auth(); // Se NON sono loggato, mi manda a accedi.php
+    $idUtente = $_SESSION['ID'];
 ?>
 <!DOCTYPE html>
 <html lang="it">

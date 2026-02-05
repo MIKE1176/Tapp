@@ -1,5 +1,6 @@
 <?php
-    include("session.php");
+    include("./session.php");
+    check_auth(); // Se NON sono loggato, mi manda a accedi.php
 ?>
 <!DOCTYPE html>
 <html lang="it">

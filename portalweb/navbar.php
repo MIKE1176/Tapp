@@ -23,7 +23,7 @@ $html = <<<HTML
         </li>
 HTML;
 
-if($_SESSION['utente'] == "AMMINISTRATIVO"){
+if($_SESSION['auth'] == "AMMINISTRATIVO"){
   $html .= <<<HTML
       <li class="nav-item">
         <a class="nav-link text-center" href="gestionePazienti.php" id="gestionePazienti">Gestione pazienti</a>

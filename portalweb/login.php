@@ -1,11 +1,6 @@
 <?php
-  include("./config.php");  //file per la connessione al DB
-  session_name("portalweb");
-  session_start();
-  if(isset($_SESSION['username']) && isset($_SESSION['sessione']) && $_SESSION['sessione'] === 'portalweb'){ // Verifica se l'utente ha già effettuato l'accesso, se sì, reindirizza alla pagina di benvenuto
-    header('Location: index.php');
-    exit;
-  }
+  include("session.php");
+  check_auth(true); // Se non loggato o non attivo, scappa e va al login
 ?>
 
 <!DOCTYPE html>
@@ -35,7 +30,7 @@
 
                   // 1. Usiamo i Prepared Statements per evitare SQL Injection
                   // Prendiamo sia la password che lo stato 'attivo' in una sola volta
-                  $query = $db->prepare("SELECT password, attivo FROM operatore WHERE username = ?");
+                  $query = $db->prepare("SELECT ID, password, attivo FROM operatore WHERE username = ?");
                   $query->bind_param('s', $myusername);
                   $query->execute();
                   $result = $query->get_result();
@@ -48,13 +43,17 @@
                       // Se è attivo, verifichiamo la password
                       else if (password_verify($mypassword, $row['password'])) {
                           // LOGIN OK
+                          session_regenerate_id(true); // Per sicurezza extra
+                          $_SESSION['ID']=$row['ID'];
                           $_SESSION['username'] = $myusername;
-                          $_SESSION['sessione'] = 'portalweb';
+                          $_SESSION['session'] = 'portalweb';
+
+                          session_write_close();
+
                           header("Location: index.php");
                           exit;
-                      } 
-                      // Password errata
-                      else {
+                      } else {
+                          // Password errata
                           echo '<p class="text-danger mb-5">Le credenziali che hai inserito non sono corrette, riprova.</p>';
                       }
                   } else {

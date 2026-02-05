@@ -1,7 +1,7 @@
 {
     "name": "TAPP",
     "short_name": "TAPP ",
-    "description": "Trasporto e assistenza per persone",
+    "description": "Trasporto e Assistenza Per Persone",
     "start_url": "index.php",
     "display": "fullscreen",
 
