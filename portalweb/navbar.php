@@ -35,7 +35,7 @@ if($_SESSION['auth'] == "AMMINISTRATIVO"){
         <a class="nav-link text-center" href="gestioneServizi.php" id="gestioneServizi">Gestione servizi</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-center" href="gestioneVolontari.php" id="gestioneVolontari">Gestione volontari</a>
+        <a class="nav-link text-center" href="gestioneOperatori.php" id="gestioneOperatori">Gestione operatori</a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-center" href="gestioneLuoghi.php" id="gestioneLuoghi">Gestione luoghi</a>

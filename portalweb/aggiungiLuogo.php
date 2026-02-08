@@ -7,8 +7,8 @@
   }
 
   // Recupero i dati
-  $denominazione = $_POST['denominazione'];
-  $indirizzo = $_POST['indirizzo'];
+  $denominazione = firstUpperSentences($_POST['denominazione']);
+  $indirizzo = firstUpperSentences($_POST['indirizzo']);
   $civico = $_POST['civico'];
   $citta = strtoupper($_POST['citta']);
   $note = mysqli_real_escape_string($db,$_POST['note']);

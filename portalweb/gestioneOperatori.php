@@ -1,13 +1,14 @@
 <?php
-include('./session.php');
+  include("session.php");
+  check_auth();
 
-//query che mi ricerca tutti i volontari
-$queryVolontari = "SELECT * FROM volontario order by volontario.cognome asc";
-$volontari = mysqli_query($db, $queryVolontari);
+  if($_SESSION['auth']!="AMMINISTRATIVO"){
+    header("location: index.php");
+  }
+  //query che mi ricerca tutti i operatori
+  $queryOperatori = "SELECT * FROM operatore order by operatore.cognome asc";
+  $operatori = mysqli_query($db, $queryOperatori);
 
-if($_SESSION['responsabile']!="AMMINISTRATIVO"){
-  header("location: index.php");
-}
 ?>
 
 <!DOCTYPE html>
@@ -18,8 +19,8 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-  <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
-  <title>Misegello - Gestione Volontari</title>
+  <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
+  <title>TAPP - Gestione operatori</title>
 </head>
 
 <body>
@@ -30,26 +31,26 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
       [].slice.call(document.getElementsByClassName("nav-link")).forEach(element => {
           element.classList.remove("fw-bold");
       });
-      document.getElementById("gestioneVolontari").classList.add("fw-bold");
+      document.getElementById("gestioneOperatori").classList.add("fw-bold");
   </script>
   <?php
     if (isset($_SESSION['errore'])) {
         if ($_SESSION['errore'] == "username") {
-            echo "<script>alert('Username del volontario già inserito. Volontario non creato.');</script>";
+            echo "<script>alert('Username dell\'operatore già inserito. Operatore non creato.');</script>";
             unset($_SESSION['errore']);
-        }elseif ($_SESSION['errore'] == "mVolontario") {
-            echo "<script>alert('Username del volontario che stai modificando è gia inserito. Volontario non modificato.');</script>";
+        }elseif ($_SESSION['errore'] == "mOperatore") {
+            echo "<script>alert('Username dell\'operatore che stai modificando è gia inserito. Operatore non modificato.');</script>";
             unset($_SESSION['errore']);
         }
     }
   ?>
 
-  <!-- VISUALIZZA VOLONTARI DISATTIVATI -->
+  <!-- VISUALIZZA operatori DISATTIVATI -->
   <?php
       $visualizzaDisattivati=0;
       $valoreRisultato="";
-      if(isset($_POST["volontariDisattivatiN"])){
-          $visualizzaDisattivati = $_POST['volontariDisattivatiN'];
+      if(isset($_POST["operatoriDisattivatiN"])){
+          $visualizzaDisattivati = $_POST['operatoriDisattivatiN'];
           if($visualizzaDisattivati == 1){
               $valoreRisultato = "checked";
           }else{
@@ -63,9 +64,9 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
           <div class="align-items-center">
               <form class="form-check form-switch text-center" id="formToggle" action="" method="POST">
                   <div class="form-check form-check-inline">
-                      <input class="d-none" type="number" value="<?php echo $visualizzaDisattivati;?>" name="volontariDisattivatiN" id="volontariN">
-                      <input class="form-check-input" type="checkbox" name="volontariDisattivati" id="flexCheckDefault" onchange="updateValue()" <?php  echo $valoreRisultato;?>>
-                      <label class="form-check-label" for="flexCheckDefault">Visualizza volontari disattivati</label>
+                      <input class="d-none" type="number" value="<?php echo $visualizzaDisattivati;?>" name="operatoriDisattivatiN" id="operatoriN">
+                      <input class="form-check-input" type="checkbox" name="operatoriDisattivati" id="flexCheckDefault" onchange="updateValue()" <?php  echo $valoreRisultato;?>>
+                      <label class="form-check-label" for="flexCheckDefault">Visualizza operatori disattivati</label>
                   </div>
               </form>
           </div>
@@ -74,26 +75,26 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
 
   <script>
       function updateValue() {
-          if(document.getElementById("volontariN").value == "0"){
-              document.getElementById("volontariN").value = "1";
+          if(document.getElementById("operatoriN").value == "0"){
+              document.getElementById("operatoriN").value = "1";
           }else{
-              document.getElementById("volontariN").value = "0";
+              document.getElementById("operatoriN").value = "0";
           }
           document.getElementById("formToggle").submit();
       }
   </script>
 
-  <!-- LISTA VOLONTARI -->
+  <!-- LISTA OPERATORI -->
 
   <div class="container vh-100">
     <div class="row">
       <?php
-      //cerco i volontari
-      if (mysqli_num_rows($volontari) != 0) {
-        while ($row = mysqli_fetch_assoc($volontari)) {        //CON mysql_fetch_assoc($volontari) ottengo il risultato riga per riga dei volontari
+      //cerco i operatori
+      if (mysqli_num_rows($operatori) != 0) {
+        while ($row = mysqli_fetch_assoc($operatori)) {        //CON mysql_fetch_assoc($operatori) ottengo il risultato riga per riga dei operatori
 
 
-          //-------------------------  DATI VOLONTARI  -------------------------
+          //-------------------------  DATI operatori  -------------------------
 
           $id = $row['ID'];
           $cognome = $row['cognome'];
@@ -102,7 +103,7 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
           $dataNascita = $row['dataNascita'];
           $telefono = $row['telefono'];
           $username = $row['username'];
-          $responsabile = $row['responsabile'];
+          $responsabile = $row['utente'];
           $attivo = $row['attivo'];
 
           if (!($visualizzaDisattivati == 0 and !$attivo)) {
@@ -136,7 +137,7 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
                     <div class="row p-2 justify-content-center">
                       <div class="col-6">
                         <!-- bottone MODIFICA -->
-                        <button type="submit" class="btn btn-outline-success w-100" data-bs-toggle="modal" data-bs-target="#<?php echo 'ModalModificaVolontario' . $id; ?>">
+                        <button type="submit" class="btn btn-outline-success w-100" data-bs-toggle="modal" data-bs-target="#<?php echo 'ModalModificaOperatore' . $id; ?>">
                           Modifica
                         </button>
                       </div>
@@ -148,7 +149,7 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
                           } else {
                               echo "outline-danger";
                           }
-                          ?> w-100" data-bs-toggle="modal" data-bs-target="#<?php echo 'ModalDisattivaVolontario' . $id; ?>">
+                          ?> w-100" data-bs-toggle="modal" data-bs-target="#<?php echo 'ModalDisattivaOperatore' . $id; ?>">
                             <?php
                             if (!$attivo) {
                                 echo "Attiva";
@@ -166,15 +167,15 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
           </div>
 
           <!-- Modal MODIFICA -->
-          <div class="modal fade" id="<?php echo 'ModalModificaVolontario' . $id; ?>" tabindex="-1">
+          <div class="modal fade" id="<?php echo 'ModalModificaOperatore' . $id; ?>" tabindex="-1">
               <div class="modal-dialog">
                   <div class="modal-content">
                     <div class="modal-header">
-                      <h1 class="modal-title fs-5" id="exampleModalLabel">Modifica volontario </h1>
+                      <h1 class="modal-title fs-5" id="exampleModalLabel">Modifica Operatore </h1>
                       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form action="./modificaVolontario.php" method="post">
-                      <input type="text" name="idVolontario" value="<?php echo $id; ?>" class="d-none"></input>
+                    <form action="./modificaOperatore.php" method="post">
+                      <input type="text" name="idOperatore" value="<?php echo $id; ?>" class="d-none"></input>
                       <div class="modal-body">
                         <div class="mb-3">
                           <div class="input-group">
@@ -199,12 +200,10 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
                           <input type="tel" name="telefono" maxlength="10" value="<?php echo $telefono; ?>" class="w-100 form-control" pattern="[0-9]+" required>
                         </div>
                         <div class="mb-3">
-                            <label for="floatingInput">Responsabile</label> <br> <!-- Controllo quello che è selezionato con gli if -->
+                            <label for="floatingInput">Qualifica</label> <br> <!-- Controllo quello che è selezionato con gli if -->
                             <select class="form-select" name="responsabile">
-                                <option value="VOLONTARIO"<?php if ($responsabile == "VOLONTARIO") echo " selected"; ?>>Volontario</option>
+                                <option value="AUTISTA"<?php if ($responsabile == "AUTISTA") echo " selected"; ?>>Autista</option>
                                 <option value="AMMINISTRATIVO"<?php if ($responsabile == "AMMINISTRATIVO") echo " selected"; ?>>Amministrativo</option>
-                                <option value="MEZZI"<?php if ($responsabile == "MEZZI") echo " selected"; ?>>Mezzi</option>
-                                <option value="CONTABILITA"<?php if ($responsabile == "CONTABILITA") echo " selected"; ?>>Contabilita</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -221,16 +220,16 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
               </div>
           </div>
           <!-- MODAL DISATTIVA -->
-          <div class="modal fade" id="<?php echo 'ModalDisattivaVolontario' . $id; ?>" tabindex="-1">
+          <div class="modal fade" id="<?php echo 'ModalDisattivaOperatore' . $id; ?>" tabindex="-1">
             <div class="modal-dialog">
               <div class="modal-content">
                 <div class="modal-header">
                   <h1 class="modal-title fs-5" id="exampleModalLabel">
                     <?php
                         if (!$attivo) {
-                            echo "Attivazione volontario";
+                            echo "Attivazione Operatore";
                         } else {
-                            echo "Disattivazione volontario";
+                            echo "Disattivazione Operatore";
                         }
                     ?>
                   </h1>
@@ -245,13 +244,13 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
                         echo "disattivare";
                     }
                   ?>
-                  il volontario <?php echo $nome . ' ' . $cognome; ?>?
+                  l'Operatore <?php echo $nome . ' ' . $cognome; ?>?
                 </div>
                 <div class="modal-footer">
                   <div class="d-grid gap-2 mx-auto">
-                    <form action="./toggleVolontario.php" method="post">
+                    <form action="./toggleOperatore.php" method="post">
                       <button type="button" class="btn btn-outline-success" data-bs-dismiss="modal">Annulla</button>
-                      <input type="text" name="idVolontario" value="<?php echo $id; ?>" class="d-none"></input>
+                      <input type="text" name="idOperatore" value="<?php echo $id; ?>" class="d-none"></input>
                       <button class="btn btn-danger" type="submit" id="bottone">
                       <?php
                         if (!$attivo) {
@@ -271,13 +270,13 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
           }
         }
       }else {
-          echo "Nessun volontario trovato.";
+          echo "Nessun Operatore trovato.";
       }
       ?>
 
       <!-- BOTTONE + -->
       <div class="col-12 col-md-6 col-lg-4 py-3">
-        <button type="button" class="btn btn-outline-success w-100 h-100" data-bs-toggle="modal" data-bs-target="#aggiungiVolontario">
+        <button type="button" class="btn btn-outline-success w-100 h-100" data-bs-toggle="modal" data-bs-target="#aggiungiOperatore">
           <h1 class="fs-1">+</h1>
         </button>
       </div>
@@ -285,14 +284,14 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
   </div>
 
   <!-- Modal BOTTONE + -->
-  <div class="modal fade" id="aggiungiVolontario" tabindex="-1">
+  <div class="modal fade" id="aggiungiOperatore" tabindex="-1">
       <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
-              <h1 class="modal-title fs-5" id="exampleModalLabel">Aggiungi volontario</h1>
+              <h1 class="modal-title fs-5" id="exampleModalLabel">Aggiungi Operatore</h1>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="./aggiungiVolontario.php" method="post">
+            <form action="./aggiungiOperatore.php" method="post">
               <div class="modal-body">
                 <div class="mb-3">
                   <div class="input-group">
@@ -317,12 +316,10 @@ if($_SESSION['responsabile']!="AMMINISTRATIVO"){
                   <input type="tel" name="telefono" maxlength="10" class="w-100 form-control" pattern="[0-9]+" required>
                 </div>
                 <div class="mb-3">
-                  <label for="floatingInput">Responsabile</label> <br>
+                  <label for="floatingInput">Qualifica</label> <br>
                   <select class="form-select" name="responsabile">
-                    <option value="VOLONTARIO">Volontario</option>
+                    <option value="AUTISTA">Autista</option>
                     <option value="AMMINISTRATIVO">Amministrativo</option>
-                    <option value="MEZZI">Mezzi</option>
-                    <option value="CONTABILITA">Contabilita</option>
                   </select>
                 </div>
                 <div class="mb-3">
