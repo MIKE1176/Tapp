@@ -8,7 +8,7 @@
 
 
   // Recupero i dati dal form aggiungiMezzo
-  $targa = $_POST['targa'];
+  $targa = strtoupper($_POST['targa']);
   $codiceMezzo = strtoupper($_POST['codiceMezzo']);
   $attivo = 1;
 
