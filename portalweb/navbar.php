@@ -21,6 +21,13 @@ $html = <<<HTML
         <li class="nav-item">
           <a class="nav-link text-center" href="mieiTurni.php" id="mieiTurni">I miei turni</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link text-center" aria-current="page" href="gestioneMissioni.php" id="gestioneMissioni">Gestione missioni</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-center" href="gestioneTurni.php" id="gestioneTurni">Gestione turni</a>
+        </li>
+
 HTML;
 
 if($_SESSION['auth'] == "AMMINISTRATIVO"){
