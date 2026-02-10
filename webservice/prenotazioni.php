@@ -159,7 +159,7 @@ HTML;
         <hr>
         <div class="vstack gap-2 d-flex justify-content-center py-4">
         <?php
-            $query_storico = mysqli_query($db, "SELECT missione.id AS idPrenotazione, obiettivo.denominazione AS nomeObiettivo, destinazione.denominazione AS nomeDestinazione, data, statoCompilazione FROM missione JOIN luogo AS obiettivo ON id_obiettivo = obiettivo.id JOIN luogo AS destinazione ON id_destinazione = destinazione.id WHERE data < NOW() AND id_utente = '$idUtente' ORDER BY data DESC LIMIT 5");
+            $query_storico = mysqli_query($db, "SELECT missione.id AS idPrenotazione, obiettivo.denominazione AS nomeObiettivo, destinazione.denominazione AS nomeDestinazione, data, statoCompilazione FROM missione JOIN luogo AS obiettivo ON id_obiettivo = obiettivo.id JOIN luogo AS destinazione ON id_destinazione = destinazione.id WHERE data < NOW() AND tipo='ANDATA' AND id_utente = '$idUtente' ORDER BY data DESC LIMIT 5");
             
             if (mysqli_num_rows($query_storico) != 0) {
                 while ($row = mysqli_fetch_assoc($query_storico)) {
@@ -169,7 +169,7 @@ HTML;
                     echo <<<HTML
                     <div class="card p-2 w-100 border-0 rounded-4 bg-secondary-subtle opacity-75">
                         <div class="card-body py-1 small">
-                            <span class="fw-bold">$data</span> - $nomeDestinazione
+                            <span class="fw-bold">$data</span> - $nomeDestinazione [$statoCompilazione]
                         </div>
                     </div>
 HTML;
