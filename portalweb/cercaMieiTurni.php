@@ -7,7 +7,6 @@ if(!isset($_GET['date'])){
 
 $id = (int)$_SESSION['ID'];
 
-
 $dataRaw = trim($_GET['date']);
 
 $dataObj =
@@ -15,33 +14,29 @@ $dataObj =
    ?: DateTime::createFromFormat('Y-m-d',$dataRaw);
 
 if(!$dataObj){
-   exit("Formato data errato: ".$dataRaw);
+   exit("Formato data errato");
 }
 
 $data = $dataObj->format('Y-m-d');
 
 $res = mysqli_query($db, "
-
-SELECT t.ID,
-       t.dataInizio,
-       t.dataFine,
-       t.note,
-       a.codiceMezzo
+SELECT
+    t.ID,
+    t.dataInizio,
+    t.dataFine,
+    t.note,
+    a.codiceMezzo
 FROM turno t
 JOIN automezzo a ON t.automezzo = a.targa
 WHERE t.id_operatore = $id
 AND DATE(t.dataInizio) = '$data'
 ORDER BY t.dataInizio ASC
-
 ");
 
-$html="";
-
 if(mysqli_num_rows($res)==0){
-
     echo "
-    <div class='col-12 text-center'>
-      <h5>Nessun turno trovato per questa data.</h5>
+    <div class='col-12 text-center mt-3'>
+      <h5>Nessun turno trovato.</h5>
     </div>";
     exit;
 }
@@ -50,13 +45,11 @@ while($r = mysqli_fetch_assoc($res)){
 
     $inizio = date("H:i", strtotime($r['dataInizio']));
     $fine   = date("H:i", strtotime($r['dataFine']));
-
     $idTurno = $r['ID'];
 
-    $html .= "
-
+    echo "
     <div class='col-12 col-md-6 my-3'>
-      <div class='card shadow p-3'>
+      <div class='card shadow p-3' style='min-width: 420px'>
 
         <h4>{$r['codiceMezzo']}</h4>
 
@@ -68,7 +61,7 @@ while($r = mysqli_fetch_assoc($res)){
           {$r['note']}
         </p>
 
-        <div class='d-flex gap-2 justify-content-end'>
+        <div class='d-flex justify-content-end'>
 
           <button class='btn btn-outline-danger'
                   data-bs-toggle='modal'
@@ -80,7 +73,6 @@ while($r = mysqli_fetch_assoc($res)){
       </div>
     </div>
 
-    <!-- MODAL ELIMINA -->
     <div class='modal fade' id='modalDelete$idTurno' tabindex='-1'>
       <div class='modal-dialog'>
         <div class='modal-content'>
@@ -95,14 +87,14 @@ while($r = mysqli_fetch_assoc($res)){
           </div>
 
           <div class='modal-footer'>
-
             <button class='btn btn-secondary'
                     data-bs-dismiss='modal'>
               Annulla
             </button>
 
             <form method='post' action='eliminaTurno.php'>
-              <input type='hidden' name='idTurno'
+              <input type='hidden'
+                     name='idTurno'
                      value='$idTurno'>
               <button class='btn btn-danger'>
                 Elimina
@@ -115,6 +107,3 @@ while($r = mysqli_fetch_assoc($res)){
       </div>
     </div>";
 }
-
-
-echo $html;

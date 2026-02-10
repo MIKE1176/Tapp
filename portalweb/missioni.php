@@ -38,7 +38,12 @@ check_auth();
 </div>
 
 <div class="row gy-3" id="contenitoreMissioni"></div>
-
+  <div class="col-12 mb-3 text-end">
+<button class="btn btn-success"
+        onclick="accettaTutti()">
+Accetta tutti
+</button>
+</div>
 </div>
 
 <script>
@@ -71,6 +76,12 @@ function assegnaMissione(id){
    body:"id="+id
  })
  .then(()=>caricaMissioni(dataCorrente));
+}
+
+function accettaTutti(){
+
+fetch("accettaTutti.php",{method:"POST"})
+.then(()=>caricaServizi());
 }
 
 </script>
