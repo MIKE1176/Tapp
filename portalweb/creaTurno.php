@@ -1,74 +1,47 @@
 <?php
 include("./session.php");
+check_auth();
+// 1. Carica configurazione
+$config = json_decode(file_get_contents('../config_orari.json'), true);
+$durataMinuti = $config['slot_turni'] ?? 60;
 
-$mezzo   = $_POST['mezzo'];
-$autista = (int)$_POST['autista'];
-
+// 2. Recupero dati
+$autista = (int)($_POST['idOperatore'] ?? 0);
+$automezzo = null;
 $slotRaw = $_POST['slotSelezionati'] ?? '';
-$data    = $_POST['dataTurno']; // data selezionata nella pagina
+$data    = $_POST['dataTurno'] ?? '';
 
-if(!$slotRaw || !$data){
-    header("location: mieiTurni.php");
+if (empty($slotRaw) || empty($data) || $autista === 0) {
+    header("Location: mieiTurni.php?error=missing");
     exit;
 }
 
+// 3. Elaborazione Orari
 $slots = explode(",", $slotRaw);
-sort($slots);
+sort($slots); 
 
-/*
-    Convertiamo in minuti per facilitarci i calcoli
-*/
-$minuti = [];
+$inizioStr = $data . " " . $slots[0] . ":00";
+$ultimoSlotStr = $data . " " . end($slots) . ":00";
 
-foreach($slots as $s){
-    list($h,$m) = explode(":", $s);
-    $minuti[] = $h*60 + $m;
+// Calcolo la fine reale
+$dateFine = new DateTime($ultimoSlotStr);
+$dateFine->modify("+$durataMinuti minutes");
+
+$inizio = $inizioStr;
+$fine   = $dateFine->format('Y-m-d H:i:s');
+
+// 4. Database
+// Assumo che $db sia la variabile di connessione proveniente da session.php
+if (!$db) {
+    die("Errore di connessione al database");
 }
 
-$blocchi = [];
-$start = $minuti[0];
-$prev  = $start;
+$stmt = mysqli_prepare($db, "INSERT INTO turno (dataInizio, dataFine, id_operatore, automezzo) VALUES (?, ?, ?, ?)");
+mysqli_stmt_bind_param($stmt, "ssii", $inizio, $fine, $autista, $automezzo);
 
-for($i=1; $i<count($minuti); $i++){
+$res = mysqli_stmt_execute($stmt);
+mysqli_stmt_close($stmt);
 
-    // se NON consecutivo (+30 min)
-    if($minuti[$i] != $prev + 30){
-        $blocchi[] = [$start, $prev];
-        $start = $minuti[$i];
-    }
-
-    $prev = $minuti[$i];
-}
-
-$blocchi[] = [$start, $prev];
-
-/*
-    Inseriamo i turni
-*/
-foreach($blocchi as $b){
-
-    $inizioMin = $b[0];
-    $fineMin   = $b[1] + 30; // fine ultimo slot
-
-    $inizio = sprintf(
-        "%s %02d:%02d:00",
-        $data,
-        floor($inizioMin/60),
-        $inizioMin%60
-    );
-
-    $fine = sprintf(
-        "%s %02d:%02d:00",
-        $data,
-        floor($fineMin/60),
-        $fineMin%60
-    );
-
-    mysqli_query($db,"
-        INSERT INTO turno
-        (dataInizio,dataFine,automezzo,id_operatore)
-        VALUES('$inizio','$fine','$mezzo',$autista)
-    ");
-}
-
-header("location: mieiTurni.php");
+header("Location: mieiTurni.php?" . ($res ? "success=1" : "error=sql"));
+exit;
+?>

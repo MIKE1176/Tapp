@@ -21,19 +21,20 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
   <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
-  <title>TAPP - Gestione Utenti</title>
+  <title>Tapp - Gestione Utenti</title>
 </head>
 
 <body>
-  <?php include("./navbar.php");?>
-
+  <?php
+    include('./navbar.php');
+  ?>
   <script>
-      [].slice.call(document.getElementsByClassName("nav-link")).forEach(element => {
-          element.classList.remove("fw-bold");
+      document.addEventListener("DOMContentLoaded", () => {
+          const navLinks = document.querySelectorAll(".nav-link");
+          navLinks.forEach(link => link.classList.remove("fw-bold"));
+          const currentNav = document.getElementById("gestioneUtenti");
+          if(currentNav) currentNav.classList.add("fw-bold");
       });
-      if(document.getElementById("gestioneUtenti")) {
-        document.getElementById("gestioneUtenti").classList.add("fw-bold");
-      }
   </script>
 
   <?php

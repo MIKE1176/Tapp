@@ -4,6 +4,13 @@
     "mattina": { "inizio": 9, "fine": 13.10 },
     "pomeriggio": { "inizio": 15, "fine": 19.10 }
   },
+  "turni": {
+    "mattina": { "inizio": 8.5, "fine": 13.5 },
+    "pomeriggio": { "inizio": 14.5, "fine": 19.5 }
+  },
+  "slot_turni": 60,
+  "preavviso_turno": 5,
+
   "preavviso_minimo_giorni": 3,
   "limite_massimo_giorni": 60,
   "limite_disdetta_giorni":1,
