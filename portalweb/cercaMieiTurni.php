@@ -14,9 +14,9 @@ $dataObj =
    ?: DateTime::createFromFormat('Y-m-d',$dataRaw);
 
 if(!$dataObj){
-   exit("Formato data errato");
+   // Se fallisce ancora, usa il costruttore generico
+   $dataObj = new DateTime($dataRaw);
 }
-
 $data = $dataObj->format('Y-m-d');
 
 // Carichiamo il preavviso dal JSON per il controllo lato server

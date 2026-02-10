@@ -103,12 +103,16 @@
     <div class="row my-3">
       <div class="col-12">
         <button class="btn btn-success btn-lg w-100" 
+                onclick="document.querySelector('#modalCreaTurno form').action='creaTurno.php'; 
+                        document.getElementById('idTurnoModifica')?.remove(); 
+                        document.querySelector('#modalCreaTurno .modal-title').innerText='Nuovo Turno';" 
                 data-bs-toggle="modal" 
                 data-bs-target="#modalCreaTurno">
           Crea turno
         </button>
       </div>
     </div>
+    
 
     <div class="row justify-content-center align-items-end my-3">
       
@@ -202,32 +206,48 @@ let configOrari = null;
 
 async function initPagina(){
     const oggi = new Date();
+    // Reset totale dell'orario per evitare scivolamenti di data
+    oggi.setHours(0, 0, 0, 0); 
     
-    // getDay() restituisce: 0 (Dom), 1 (Lun), 2 (Mar), 3 (Mer), 4 (Gio), 5 (Ven), 6 (Sab)
-    const giornoSettimana = oggi.getDay(); 
+    let giornoSettimana = oggi.getDay(); // 0 è Domenica, 1 è Lunedì...
     
-    // Calcoliamo la differenza per arrivare al Lunedì
-    // Se è domenica (0), dobbiamo tornare indietro di 6 giorni.
-    // Se è lunedì (1), torniamo indietro di 0.
-    // Se è martedì (2), torniamo indietro di 1, e così via.
-    const diff = oggi.getDate() - (giornoSettimana === 0 ? 6 : giornoSettimana - 1);
+    // Calcoliamo la distanza dal Lunedì (se oggi è domenica/0, diff è 6)
+    const diff = (giornoSettimana === 0) ? 6 : giornoSettimana - 1;
     
-    const lunediCorrente = new Date(oggi.setDate(diff));
+    const lunediCorrente = new Date(oggi);
+    lunediCorrente.setDate(oggi.getDate() - diff);
     
-    // Formattiamo la data in YYYY-MM-DD per l'input date
-    const isoLunedi = lunediCorrente.toISOString().split("T")[0];
+    // Formattazione manuale YYYY-MM-DD per l'input date
+    const yyyy = lunediCorrente.getFullYear();
+    const mm = String(lunediCorrente.getMonth() + 1).padStart(2, '0');
+    const dd = String(lunediCorrente.getDate()).padStart(2, '0');
+    const dataFinale = `${yyyy}-${mm}-${dd}`;
     
-    document.getElementById("data").value = isoLunedi;
+    document.getElementById("data").value = dataFinale;
     
-    // Carichiamo prima la config, poi la settimana
     await caricaConfig(); 
     caricaSettimana();
+}
+
+function aggiornaGraficaSlot() {
+    const tuttiIBox = grid.querySelectorAll('.slot-row');
+    tuttiIBox.forEach(box => {
+        const cb = box.querySelector('input');
+        if (cb.checked) {
+            box.classList.add('active-border');
+        } else {
+            box.classList.remove('active-border');
+        }
+    });
 }
 
 function spostaSettimana(giorni){
     const d = new Date(settimanaStart);
     d.setDate(d.getDate() + giorni);
-    document.getElementById("data").value = d.toISOString().split("T")[0];
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    document.getElementById("data").value = `${y}-${m}-${dd}`;
     if (document.activeElement) document.activeElement.blur();
     caricaSettimana();
 }
@@ -243,43 +263,9 @@ function verificaPreavviso(dataScelta) {
     return scelta >= limite;
 }
 
-function apriModificaTurno(id, data, inizio, fine) {
-    // Verifichiamo subito il preavviso anche per la modifica
-    if (!verificaPreavviso(data)) {
-        alert("Non puoi modificare questo turno. Preavviso minimo: " + configOrari.preavviso_turno + " giorni.");
-        return;
-    }
-
-    // Cambiamo il titolo del modal e l'action della form
-    const modal = document.getElementById('modalCreaTurno');
-    modal.querySelector('.modal-title').innerText = "Modifica Turno #" + id;
-    const form = modal.querySelector('form');
-    form.action = "modificaTurno.php"; // Indirizziamo a un nuovo file
-
-    // Aggiungiamo l'ID del turno alla form se non c'è già
-    let inputId = document.getElementById('idTurnoModifica');
-    if(!inputId) {
-        inputId = document.createElement('input');
-        inputId.type = 'hidden';
-        inputId.name = 'idTurno';
-        inputId.id = 'idTurnoModifica';
-        form.appendChild(inputId);
-    }
-    inputId.value = id;
-
-    // Impostiamo la data nel select
-    document.getElementById('giornoTurno').value = data;
-    
-    // Apriamo il modal
-    const bsModal = new bootstrap.Modal(modal);
-    bsModal.show();
-    
-    // Rigeneriamo gli slot (qui l'utente sceglierà i nuovi orari)
-    generaSlot();
-}
-
 function caricaSettimana() {
     const dataSel = document.getElementById("data").value;
+    if(!dataSel) return;
     settimanaStart = new Date(dataSel);
     const cont = document.getElementById("contenitoreSettimana");
     const selectGiorno = document.getElementById("giornoTurno");
@@ -290,34 +276,29 @@ function caricaSettimana() {
     for (let i = 0; i < 7; i++) {
         const giorno = new Date(settimanaStart);
         giorno.setDate(settimanaStart.getDate() + i);
-        const iso = giorno.toISOString().split("T")[0];
+        const y = giorno.getFullYear();
+        const m = String(giorno.getMonth() + 1).padStart(2, '0');
+        const d = String(giorno.getDate()).padStart(2, '0');
+        const iso = `${y}-${m}-${d}`;
         
-        // Otteniamo il numero del giorno (0=Dom, 1=Lun, ..., 6=Sab)
-        // Trasformiamo 0 (Dom) in 7 per allinearci al tuo JSON (1=Lun, 7=Dom)
         let dayNum = giorno.getDay(); 
         if (dayNum === 0) dayNum = 7;
 
         const giornoAttivo = configOrari ? configOrari.giorni_attivi.includes(dayNum) : true;
-
         let titolo = giorno.toLocaleDateString("it-IT", {weekday:"long", day:"2-digit", month:"2-digit"});
         titolo = titolo.toLowerCase().replace(/(?:^|[\s\-\/\(])\S/g, function(a) { return a.toUpperCase(); });
 
-        // Aggiungiamo al select del Modal solo se il giorno è attivo
         if (giornoAttivo) {
             selectGiorno.innerHTML += `<option value="${iso}">${titolo}</option>`;
         }
 
         const col = document.createElement("div");
         col.className = "col-12 col-md";
-        // Se il giorno non è attivo, lo rendiamo visivamente spento nella griglia principale
-        const opacity = giornoAttivo ? "" : "opacity-50";
-        const bg = giornoAttivo ? "" : "background:#f1f1f1;";
-
         col.innerHTML = `
             <div class="giorno-box ${giornoAttivo ? '' : 'bg-light opacity-75'}">
                 <div class="titolo-giorno border-bottom pb-1 mb-2 text-center">${titolo}</div>
                 <div id="g_${iso}" class="mt-3 text-center">
-                    ${giornoAttivo ? 'Caricamento...' : '<h5 class="text-muted mt-2 px-2">Servizio non attivo</h5>'}
+                    ${giornoAttivo ? 'Caricamento...' : '<h5 class="text-muted mt-4 px-2" style="font-size: 1rem;">Servizio non attivo</h5>'}
                 </div>
             </div>
         `;
@@ -346,80 +327,124 @@ async function caricaConfig() {
             const nomeFascia = key.charAt(0).toUpperCase() + key.slice(1);
             fasciaSelect.innerHTML += `<option value="${key}">${nomeFascia} (${labelInizio}–${labelFine})</option>`;
         }
-        document.getElementById("giornoTurno").onchange = generaSlot;
+        
+        // Colleghiamo l'evento onchange
+        document.getElementById("giornoTurno").addEventListener('change', generaSlot);
     }
-    generaSlot();
+    // Chiamiamo generaSlot solo se abbiamo già una data nel select
+    if (document.getElementById("giornoTurno").value) {
+        generaSlot();
+    }
 }
 
 function formattaOraFascia(valore) {
     let h = Math.floor(valore);
-    let m = ((valore % 1) === 0.5) ? "30" : "00";
+    let m = ((valore % 1) === 0.5 || (valore % 1) === 0.1) ? "30" : "00"; 
+    if(valore % 1 > 0 && valore % 1 < 0.2) m = "10"; 
     return String(h).padStart(2, "0") + ":" + m;
 }
 
-async function generaSlot() {
+// Aggiungiamo i parametri opzionali per la pre-selezione
+async function generaSlot(preSelectInizio = null, preSelectFine = null) {
     if (!configOrari) return;
-
     grid.innerHTML = "";
     selezionati.clear();
     
     const dataSelezionata = document.getElementById("giornoTurno").value;
-    const dataObj = new Date(dataSelezionata);
-    let dayNum = dataObj.getDay();
-    if (dayNum === 0) dayNum = 7;
-
     const btnSalva = document.querySelector('#modalCreaTurno button[type="submit"]');
 
-    // 1. Controllo Giorno Attivo
+    if (!dataSelezionata) return;
+
+    const d = new Date(dataSelezionata);
+    d.setHours(12, 0, 0, 0); 
+    let dayNum = d.getDay(); 
+    if (dayNum === 0) dayNum = 7;
+
     if (!configOrari.giorni_attivi.includes(dayNum)) {
-        grid.innerHTML = `<div class="col-12"><div class="alert alert-warning">Il servizio non è attivo in questo giorno.</div></div>`;
+        grid.innerHTML = `<div class="col-12"><div class="alert alert-warning py-2 text-center">Servizio non attivo.</div></div>`;
         if(btnSalva) btnSalva.disabled = true;
         return;
     }
 
-    // 2. Controllo Preavviso (usando la nuova variabile)
     if (!verificaPreavviso(dataSelezionata)) {
-        grid.innerHTML = `<div class="col-12"><div class="alert alert-danger"><b>Attenzione:</b> Preavviso richiesto di ${configOrari.preavviso_turno} giorni!</div></div>`;
+        grid.innerHTML = `<div class="col-12"><div class="alert alert-danger small py-2 text-center">Preavviso scaduto!</div></div>`;
         if(btnSalva) btnSalva.disabled = true;
         return;
     }
-
+    
     if(btnSalva) btnSalva.disabled = false;
 
-    // Generazione slot basata su configOrari.orari
     const fasciaSel = document.getElementById("fascia").value;
-    const orariFascia = configOrari.orari[fasciaSel]; // Usiamo la chiave "orari" dal JSON
-    const minutiSlot = configOrari.slot_turni; 
-    const stepOra = minutiSlot / 60;
-
-    // Titolo istruzioni
-    const info = document.createElement("div");
-    info.className = "col-12 mb-2";
-    info.innerHTML = `<small class="text-muted">Trascina o clicca per selezionare gli orari:</small>`;
-    grid.appendChild(info);
+    const orariFascia = configOrari.orari[fasciaSel];
+    const stepOra = configOrari.slot_turni / 60;
 
     for (let oraCorrente = orariFascia.inizio; oraCorrente < orariFascia.fine; oraCorrente += stepOra) {
         const inizioString = formattaOraFascia(oraCorrente);
         const fineString = formattaOraFascia(oraCorrente + stepOra);
 
+        let isChecked = true; 
+        if (preSelectInizio && preSelectFine) {
+            isChecked = (inizioString >= preSelectInizio && inizioString < preSelectFine);
+        }
+
         const row = document.createElement("div");
         row.className = "col-12";
-        
         const item = document.createElement("div");
-        item.className = "slot-row active-border";
+        item.className = "slot-row" + (isChecked ? " active-border" : "");
         item.innerHTML = `
             <span class="small fw-bold">${inizioString} → ${fineString}</span>
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" id="sw_${inizioString}" checked>
+                <input class="form-check-input" type="checkbox" role="switch" id="sw_${inizioString}" ${isChecked ? 'checked' : ''}>
             </div>
         `;
 
         const checkbox = item.querySelector('input');
-        selezionati.add(inizioString); 
+        if (isChecked) selezionati.add(inizioString); 
 
         checkbox.onchange = () => {
-            // ... logica di validazione continuità (rimane uguale a prima) ...
-            validazioneContinuita(checkbox, item, inizioString);
+            const inputs = Array.from(grid.querySelectorAll('input[type="checkbox"]'));
+            const checkedInputs = inputs.filter(i => i.checked);
+            
+            let valida = true;
+            if (checkedInputs.length > 0) {
+                const primoIdx = inputs.indexOf(checkedInputs[0]);
+                const ultimoIdx = inputs.indexOf(checkedInputs[checkedInputs.length - 1]);
+                // Se la differenza tra gli indici non corrisponde al numero di check, c'è un buco
+                if ((ultimoIdx - primoIdx + 1) !== checkedInputs.length) valida = false;
+            } else {
+                valida = false; // Almeno uno deve essere selezionato
+            }
+
+            if (!valida) {
+                // Annulla il click
+                checkbox.checked = !checkbox.checked;
+                
+                // --- LOGICA ALERT (RIVISTA) ---
+                if (!document.getElementById("temp-alert-box")) {
+                    const alertDiv = document.createElement("div");
+                    alertDiv.id = "temp-alert-box";
+                    alertDiv.className = "col-12 order-last"; // Lo mettiamo in fondo
+                    alertDiv.innerHTML = `
+                        <div class="alert alert-warning p-2 mt-2 small border-0 text-center shadow-sm" 
+                             style="background-color: #fff3cd; color: #856404; font-weight: 600;">
+                            ⚠️ Selezione continua richiesta
+                        </div>`;
+                    grid.appendChild(alertDiv);
+                    setTimeout(() => {
+                        const el = document.getElementById("temp-alert-box");
+                        if(el) el.remove();
+                    }, 2500);
+                }
+            } else {
+                // Aggiornamento Set e Grafica
+                if (checkbox.checked) {
+                    selezionati.add(inizioString);
+                    item.classList.add('active-border');
+                } else {
+                    selezionati.delete(inizioString);
+                    item.classList.remove('active-border');
+                }
+            }
             aggiornaCampoNascosto();
         };
 
@@ -433,12 +458,40 @@ function aggiornaCampoNascosto() {
     document.getElementById("slotSelezionati").value = Array.from(selezionati).sort().join(",");
 }
 
+function apriModificaTurno(id, data, inizio, fine) {
+    // 1. Cambia il titolo e l'action del form
+    const modalElement = document.getElementById('modalCreaTurno');
+    modalElement.querySelector('.modal-title').innerText = "Modifica Turno #" + id;
+    const form = modalElement.querySelector('form');
+    form.action = "modificaTurno.php";
+
+    // 2. Gestisci l'input ID del turno (crealo se non esiste)
+    let inputId = document.getElementById('idTurnoModifica');
+    if(!inputId) {
+        inputId = document.createElement('input');
+        inputId.type = 'hidden';
+        inputId.name = 'idTurno';
+        inputId.id = 'idTurnoModifica';
+        form.appendChild(inputId);
+    }
+    inputId.value = id;
+
+    // 3. Imposta la data nel select
+    document.getElementById('giornoTurno').value = data;
+
+    // 4. Mostra il modal
+    const bsModal = new bootstrap.Modal(modalElement);
+    bsModal.show();
+
+    // 5. Rigenera gli slot (passando gli orari attuali per pre-selezionarli)
+    // Passiamo inizio e fine per far capire a generaSlot cosa spuntare
+    generaSlot(inizio, fine);
+}
+
 function apriModalElimina(id) {
     var myModal = new bootstrap.Modal(document.getElementById('modalDelete' + id));
     myModal.show();
 }
-
-initPagina();
 </script>
 
 </body>
