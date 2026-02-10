@@ -4,8 +4,8 @@ include('./session.php');
 
 <!DOCTYPE html>
 <html lang="it">
-
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -16,271 +16,278 @@ include('./session.php');
 <title>Misegello - I tuoi turni</title>
 
 <style>
-/* ===== SLOT GRID ===== */
-
-.slot-grid{
-  display:grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap:10px;
-  max-height:320px;
-  overflow:auto;
+.giorno-box{
+  border:1px solid #ddd;
+  border-radius:12px;
+  padding:10px;
+  background:#fff;
+  height:100%;
 }
 
-.slot{
-  border:1px solid #ccc;
-  border-radius:10px;
-  padding:10px 0;
-  text-align:center;
-  cursor:pointer;
-  user-select:none;
-  font-weight:500;
-  background:#f8f9fa;
-  transition: all .15s ease;
-}
-
-.slot:hover{
-  background:#e9ecef;
+.titolo-giorno{
+  font-weight:600;
+  margin-bottom:10px;
 }
 
 .slot.selected{
   background:#198754;
   color:white;
-  border-color:#198754;
 }
 </style>
 
 </head>
 
-<body onload="showHint(null)">
+<body onload="initPagina()">
 
 <?php include('./navbar.php'); ?>
 
-<script>
-document.querySelectorAll(".nav-link").forEach(el=>{
-  el.classList.remove("fw-bold");
-});
-document.getElementById("mieiTurni")?.classList.add("fw-bold");
-</script>
+<div class="container-fluid">
 
-<div class="container">
+<!-- CONTROLLI SETTIMANA -->
 
-  <!-- ===== SELEZIONE DATA ===== -->
+<div class="row align-items-end my-3">
 
-  <div class="row justify-content-center my-4">
+<div class="col-3 col-md-2">
+<button class="btn btn-outline-secondary w-100"
+        onclick="spostaSettimana(-7)">
+←
+</button>
+</div>
 
-    <div class="col-md-6 text-center">
-      <label class="form-label">Seleziona data</label>
-      <input type="date" id="data" class="form-control"
-             onchange="showHint(this.value)">
-    </div>
+<div class="col-6 col-md-4">
+<label>Settimana</label>
+<input type="date"
+       id="data"
+       class="form-control"
+       onchange="caricaSettimana()">
+</div>
 
-    <div class="col-md-3 d-flex align-items-end">
-      <button class="btn btn-outline-success w-100"
-              data-bs-toggle="modal"
-              data-bs-target="#modalCreaTurno">
-        Crea turno
-      </button>
-    </div>
+<div class="col-3 col-md-2">
+<button class="btn btn-outline-secondary w-100"
+        onclick="spostaSettimana(7)">
+→
+</button>
+</div>
 
-  </div>
+<div class="col-md-4 d-none d-md-block text-end">
+<button class="btn btn-success"
+        data-bs-toggle="modal"
+        data-bs-target="#modalCreaTurno">
+Crea turno
+</button>
+</div>
 
-  <div class="row justify-content-center" id="riga"></div>
+<div class="col-12 d-md-none mt-2">
+<button class="btn btn-success w-100"
+        data-bs-toggle="modal"
+        data-bs-target="#modalCreaTurno">
+Crea turno
+</button>
+</div>
+
+</div>
+
+<!-- SETTIMANA -->
+
+<div id="contenitoreSettimana"
+     class="row g-3"></div>
+</div>
 
 </div>
 
 <!-- ================= MODAL CREA TURNO ================= -->
 
-<div class="modal fade" id="modalCreaTurno" tabindex="-1">
+<div class="modal fade" id="modalCreaTurno">
+<div class="modal-dialog">
+<div class="modal-content">
 
-  <div class="modal-dialog">
+<div class="modal-header">
+<h5 class="modal-title">Nuovo turno</h5>
+<button class="btn-close" data-bs-dismiss="modal"></button>
+</div>
 
-    <div class="modal-content">
+<form action="creaTurno.php" method="post">
 
-      <div class="modal-header">
-        <h5 class="modal-title">Nuovo turno</h5>
-        <button type="button" class="btn-close"
-                data-bs-dismiss="modal"></button>
-      </div>
+<div class="modal-body">
 
-      <form action="creaTurno.php" method="post">
+<div class="mb-3">
+<label>Giorno</label>
+<select id="giornoTurno"
+        name="dataTurno"
+        class="form-select"
+        required>
+</select>
+</div>
 
-        <div class="modal-body">
+<div class="mb-3">
+<label>Fascia</label>
+<select id="fascia"
+        class="form-select"
+        onchange="generaSlot()">
+<option value="mattina">Mattina (08:30–13:30)</option>
+<option value="pomeriggio">Pomeriggio (14:30–19:30)</option>
+</select>
+</div>
 
-          <!-- AUTISTA -->
+<div id="slotGrid" class="row g-2"></div>
 
-          <div class="mb-3">
-            <label class="form-label">Autista</label>
-
-            <select name="autista" class="form-select" required>
-              <?php
-              $res = mysqli_query(
-                $db,
-                "SELECT ID,nome,cognome
-                 FROM operatore
-                 WHERE attivo=1
-                 ORDER BY cognome"
-              );
-
-              while ($r = mysqli_fetch_assoc($res)) {
-                echo "<option value='{$r['ID']}'>
-                        {$r['cognome']} {$r['nome']}
-                      </option>";
-              }
-              ?>
-            </select>
-          </div>
-
-          <!-- MEZZO -->
-
-          <div class="mb-3">
-            <label class="form-label">Mezzo</label>
-
-            <select name="mezzo" class="form-select" required>
-              <?php
-              $mezzi = mysqli_query(
-                $db,
-                "SELECT targa,codiceMezzo
-                 FROM automezzo
-                 WHERE attivo=1
-                 ORDER BY codiceMezzo"
-              );
-
-              while ($m = mysqli_fetch_assoc($mezzi)) {
-                echo "<option value='{$m['targa']}'>
-                        {$m['codiceMezzo']}
-                      </option>";
-              }
-              ?>
-            </select>
-          </div>
-
-          <!-- SLOT ORARI -->
-
-          <div class="mb-3">
-            <label class="form-label fw-bold">
-              Orari (blocchi da 30 min)
-            </label>
-
-            <div id="slotGrid" class="slot-grid"></div>
-
-            <input type="hidden" name="slotSelezionati" id="slotSelezionati">
-            <input type="hidden" name="dataTurno" id="dataTurno">
-          </div>
-
-          <!-- NOTE -->
-
-          <div class="mb-3">
-            <label>Note</label>
-            <textarea name="noteTurno"
-                      class="form-control"
-                      rows="3"></textarea>
-          </div>
-
-        </div>
-
-        <div class="modal-footer">
-          <button type="button"
-                  class="btn btn-outline-secondary"
-                  data-bs-dismiss="modal">
-            Annulla
-          </button>
-
-          <button type="submit"
-                  class="btn btn-success">
-            Salva
-          </button>
-        </div>
-
-      </form>
-
-    </div>
-
-  </div>
+<input type="hidden"
+       name="slotSelezionati"
+       id="slotSelezionati">
 
 </div>
 
-<!-- ================= SCRIPT ================= -->
+<div class="modal-footer">
+<button class="btn btn-secondary"
+        data-bs-dismiss="modal">
+Annulla
+</button>
+
+<button class="btn btn-success">
+Salva
+</button>
+</div>
+
+</form>
+
+</div>
+</div>
+</div>
 
 <script>
-/* ===== Caricamento turni ===== */
 
-function showHint(val){
+let settimanaStart;
 
-  let data = val;
+/* ===== Init ===== */
 
-  if(!val){
-    const oggi = new Date();
-    data =
-      oggi.getFullYear() + "-" +
-      String(oggi.getMonth()+1).padStart(2,"0") + "-" +
-      String(oggi.getDate()).padStart(2,"0");
-
-    document.getElementById("data").value = data;
-  }
-
-  fetch("cercaMieiTurni.php?date="+data)
-    .then(r=>r.text())
-    .then(html=>{
-      document.getElementById("riga").innerHTML = html;
-    });
+function initPagina(){
+  const oggi = new Date().toISOString().split("T")[0];
+  document.getElementById("data").value = oggi;
+  caricaSettimana();
 }
 
-/* ===== Generazione slot ===== */
+
+/* ===== frecce settimana ===== */
+
+function spostaSettimana(giorni){
+  const d = new Date(settimanaStart);
+  d.setDate(d.getDate()+giorni);
+
+  document.getElementById("data").value =
+    d.toISOString().split("T")[0];
+
+  caricaSettimana();
+}
+
+/* ===== carica settimana ===== */
+function caricaSettimana(){
+
+  const dataSel = document.getElementById("data").value;
+
+  // ora la settimana parte dal giorno scelto
+  settimanaStart = new Date(dataSel);
+
+  const cont = document.getElementById("contenitoreSettimana");
+  const selectGiorno = document.getElementById("giornoTurno");
+
+  cont.innerHTML="";
+  selectGiorno.innerHTML="";
+
+  for(let i=0;i<7;i++){
+
+    const giorno = new Date(settimanaStart);
+    giorno.setDate(settimanaStart.getDate()+i);
+
+    const iso = giorno.toISOString().split("T")[0];
+
+    const titolo = giorno.toLocaleDateString(
+      "it-IT",
+      {weekday:"long", day:"2-digit", month:"2-digit"}
+    );
+
+    selectGiorno.innerHTML +=
+      `<option value="${iso}">
+        ${titolo}
+       </option>`;
+
+    const col = document.createElement("div");
+    col.className="col-12 col-md";
+
+    col.innerHTML=`
+      <div class="giorno-box">
+        <div class="titolo-giorno text-capitalize">
+          ${titolo}
+        </div>
+        <div id="g_${iso}">
+          Caricamento...
+        </div>
+      </div>
+    `;
+
+    cont.appendChild(col);
+
+    fetch("cercaMieiTurni.php?date="+iso)
+      .then(r=>r.text())
+      .then(html=>{
+        document.getElementById("g_"+iso).innerHTML = html;
+      });
+  }
+}
+
+
+/* ===== SLOT ===== */
 
 const grid = document.getElementById("slotGrid");
 let selezionati = new Set();
 
 function generaSlot(){
-  for(let h=0; h<24; h++){
-    for(let m of [0,30]){
 
-      const ora =
-        String(h).padStart(2,"0") + ":" +
-        String(m).padStart(2,"0");
+  grid.innerHTML="";
+  selezionati.clear();
 
-      const div = document.createElement("div");
-      div.className = "slot";
-      div.textContent = ora;
+  let start =
+    document.getElementById("fascia").value==="mattina"
+    ? 8.5 : 14.5;
 
-      div.onclick = () => {
+  for(let i=0;i<5;i++){
 
-        div.classList.toggle("selected");
+    let hour=Math.floor(start+i);
+    let minute=((start+i)%1)?"30":"00";
 
-        if(selezionati.has(ora))
-          selezionati.delete(ora);
-        else
-          selezionati.add(ora);
+    const ora =
+      String(hour).padStart(2,"0")+":"+minute;
 
-        document.getElementById("slotSelezionati").value =
-          Array.from(selezionati).sort().join(",");
-      };
+    const col=document.createElement("div");
+    col.className="col-4";
 
-      grid.appendChild(div);
-    }
+    const div=document.createElement("div");
+    div.className="border rounded p-2 text-center slot selected";
+    div.textContent=ora;
+
+    selezionati.add(ora);
+
+    div.onclick=()=>{
+      div.classList.toggle("selected");
+
+      if(selezionati.has(ora))
+        selezionati.delete(ora);
+      else
+        selezionati.add(ora);
+
+      document.getElementById("slotSelezionati").value =
+        Array.from(selezionati).join(",");
+    };
+
+    col.appendChild(div);
+    grid.appendChild(col);
   }
+
+  document.getElementById("slotSelezionati").value =
+    Array.from(selezionati).join(",");
 }
 
 generaSlot();
 
-/* ===== Reset slot quando chiudi modal ===== */
-
-document.getElementById("modalCreaTurno")
-.addEventListener("hidden.bs.modal", () => {
-
-  selezionati.clear();
-
-  document.querySelectorAll(".slot")
-    .forEach(s => s.classList.remove("selected"));
-});
-
-/* ===== Imposta data turno quando apri modal ===== */
-
-document.getElementById("modalCreaTurno")
-.addEventListener("show.bs.modal", () => {
-
-  document.getElementById("dataTurno").value =
-    document.getElementById("data").value;
-});
 </script>
 
 </body>
