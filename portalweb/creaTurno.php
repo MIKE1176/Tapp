@@ -41,7 +41,10 @@ mysqli_stmt_bind_param($stmt, "ssii", $inizio, $fine, $autista, $automezzo);
 
 $res = mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
+$dataRitorno = $_POST['dataRitorno'] ?? date('Y-m-d');
 
-header("Location: mieiTurni.php?" . ($res ? "success=1" : "error=sql"));
+header("Location: mieiTurni.php?" .
+       ($res ? "success=1" : "error=sql") .
+       "&data=" . urlencode($dataRitorno));
+
 exit;
-?>

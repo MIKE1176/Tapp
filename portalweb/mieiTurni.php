@@ -154,7 +154,7 @@
         <form action="creaTurno.php" method="post">
           <input type="hidden" name="idOperatore" value="<?php echo $_SESSION['ID']; ?>">
           <div class="modal-body">
-
+            <input type="hidden" name="dataRitorno" id="dataRitorno">
           <div class="mb-3">
             <label>Giorno</label>
             <select id="giornoTurno"
@@ -204,28 +204,42 @@ const grid = document.getElementById("slotGrid");
 let selezionati = new Set();
 let configOrari = null;
 
+document.querySelector('#modalCreaTurno form').addEventListener('submit', function(){
+    const dataCorrente = document.getElementById("data").value;
+    document.getElementById("dataRitorno").value = dataCorrente;
+});
+
 async function initPagina(){
-    const oggi = new Date();
-    // Reset totale dell'orario per evitare scivolamenti di data
-    oggi.setHours(0, 0, 0, 0); 
-    
-    let giornoSettimana = oggi.getDay(); // 0 è Domenica, 1 è Lunedì...
-    
-    // Calcoliamo la distanza dal Lunedì (se oggi è domenica/0, diff è 6)
-    const diff = (giornoSettimana === 0) ? 6 : giornoSettimana - 1;
-    
-    const lunediCorrente = new Date(oggi);
-    lunediCorrente.setDate(oggi.getDate() - diff);
-    
-    // Formattazione manuale YYYY-MM-DD per l'input date
-    const yyyy = lunediCorrente.getFullYear();
-    const mm = String(lunediCorrente.getMonth() + 1).padStart(2, '0');
-    const dd = String(lunediCorrente.getDate()).padStart(2, '0');
-    const dataFinale = `${yyyy}-${mm}-${dd}`;
-    
-    document.getElementById("data").value = dataFinale;
-    
-    await caricaConfig(); 
+
+    // 🔹 Legge parametro data dalla URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const dataFromUrl = urlParams.get("data");
+        console.log(dataFromUrl);
+    let dataIniziale;
+
+    if (dataFromUrl) {
+        // Se arriva dalla redirect dopo creazione turno
+        dataIniziale = new Date(dataFromUrl);
+    } else {
+        // Default: lunedì corrente (logica tua originale)
+        const oggi = new Date();
+        oggi.setHours(0, 0, 0, 0); 
+        
+        let giornoSettimana = oggi.getDay();
+        const diff = (giornoSettimana === 0) ? 6 : giornoSettimana - 1;
+
+        dataIniziale = new Date(oggi);
+        dataIniziale.setDate(oggi.getDate() - diff);
+    }
+
+    // Formattazione YYYY-MM-DD
+    const yyyy = dataIniziale.getFullYear();
+    const mm = String(dataIniziale.getMonth() + 1).padStart(2, '0');
+    const dd = String(dataIniziale.getDate()).padStart(2, '0');
+
+    document.getElementById("data").value = `${yyyy}-${mm}-${dd}`;
+
+    await caricaConfig();
     caricaSettimana();
 }
 

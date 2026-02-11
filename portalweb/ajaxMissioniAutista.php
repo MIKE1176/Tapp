@@ -59,8 +59,7 @@ $res=$stmt->get_result();
 while($r=$res->fetch_assoc()){
 
  echo "
- <div class='col-12'>
-  <div class='card card-missione shadow p-3'>
+ <div class='card card-missione shadow p-3 mb-2'>
 
    <h5>{$r['cognome']} {$r['nome']}</h5>
 
@@ -73,6 +72,6 @@ while($r=$res->fetch_assoc()){
            Accetta missione
    </button>
 
-  </div>
  </div>";
 }
+
