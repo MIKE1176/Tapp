@@ -6,7 +6,7 @@ check_auth();
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>TAPP - I Miei Trasporti</title>
+    <title>TAPP - I Miei Servizi</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -76,7 +76,7 @@ check_auth();
       });
   </script>
 <div class="container py-4">
-    <h2 class="text-center fw-bold mb-4 text-primary">I MIEI TRASPORTI</h2>
+    <h2 class="text-center fw-bold mb-4 text-primary">I MIEI SERVIZI</h2>
 
     <div class="calendar-nav">
         <div class="row g-2 align-items-center">

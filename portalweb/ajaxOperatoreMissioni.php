@@ -13,21 +13,21 @@ $distanzaObiettivo = intval($config['distanza_obiettivo_min'] ?? 0);
 
 $hasAnyMission = false;
 $output = "";
+$now = time();
 
-// Set locale per avere i giorni in italiano (se il server lo supporta)
+// Set locale per avere i giorni in italiano
 setlocale(LC_TIME, 'it_IT.UTF-8', 'it_IT', 'it');
 
 for ($i = 0; $i < 7; $i++) {
     $currentDate = date('Y-m-d', strtotime("$startDate + $i days"));
     
-    // Nome del giorno completo (es: Lunedì 16 Febbraio)
-    // Usiamo IntlDateFormatter perché strftime è deprecato nelle versioni recenti di PHP
     $fmt = new IntlDateFormatter('it_IT', IntlDateFormatter::FULL, IntlDateFormatter::NONE);
     $fmt->setPattern('EEEE d MMMM');
     $titoloGiorno = ucfirst($fmt->format(strtotime($currentDate)));
     
-    // Query per le missioni dell'operatore loggato
-    $sql = "SELECT m.*, u.nome, u.cognome, u.noteUtente,
+    // Query aggiornata: prendiamo anche indirizzo, civico e citta dall'utente
+    $sql = "SELECT m.*, u.nome, u.cognome, u.noteUtente, 
+                   u.indirizzo, u.civico, u.citta,
                    dest.denominazione as nome_dest, part.denominazione as nome_part
             FROM missione m
             LEFT JOIN utente u ON m.id_utente = u.ID
@@ -52,18 +52,32 @@ for ($i = 0; $i < 7; $i++) {
             $oraAppuntamento = date("H:i", $timestampMissione);
             $tipo = $row['tipo'];
             
-            // 2. Calcolo Orario di Partenza Suggerito
+            $statoReale = $row['statoCompilazione'] ?? 'N/D';
+            $statoVisualizzato = $statoReale;
+            $coloreStato = "text-info"; // Default azzurro
+
+            if ($statoReale === 'ASSEGNATA' && $timestampMissione < $now) {
+                $statoVisualizzato = "COMPLETATA";
+                $coloreStato = "text-success"; // Verde per il passato
+            }else if($statoReale === 'RIFIUTATA' || $statoReale === 'ANNULLATA'){
+                $coloreStato = "text-danger";
+            }
+            
             if ($tipo === 'ANDATA') {
-                // Sottraiamo tempo arrivo + distanza
                 $minutiDaSottrarre = $tempoArrivo + $distanzaObiettivo;
             } else {
-                // Solo tempo arrivo
                 $minutiDaSottrarre = $tempoArrivo;
             }
             $oraPartenza = date("H:i", strtotime("-$minutiDaSottrarre minutes", $timestampMissione));
 
             $classeTipo = ($tipo == 'RITORNO') ? 'ritorno' : '';
             $idCollapse = "note_" . $row['ID'];
+
+            // Logica per l'indirizzo dinamico: se ID luogo è 1, usa dati utente
+            $indirizzoUtente = trim($row['indirizzo'] . " " . $row['civico'] . ", " . $row['citta'] . " [ABITAZIONE]");
+            
+            $partenzaEffettiva = ($row['id_obiettivo'] == 1) ? $indirizzoUtente : $row['nome_part'];
+            $destinazioneEffettiva = ($row['id_destinazione'] == 1) ? $indirizzoUtente : $row['nome_dest'];
             
             $output .= "
             <div class='card mission-card $classeTipo mb-3 shadow-sm'>
@@ -82,8 +96,12 @@ for ($i = 0; $i < 7; $i++) {
                     </div>
 
                     <div class='small text-secondary mb-3'>
-                        <div class='mb-1'><i class='bi bi-geo-alt-fill text-danger'></i> <b>DA:</b> " . ($row['nome_part'] ?: 'Indirizzo Utente') . "</div>
-                        <div><i class='bi bi-flag-fill text-success'></i> <b>A:</b> " . ($row['nome_dest'] ?: 'Indirizzo Utente') . "</div>
+                        <div class='mb-1'><i class='bi bi-geo-alt-fill text-danger'></i> <b>DA:</b> " . ($partenzaEffettiva ?: 'N/D') . "</div>
+                        <div><i class='bi bi-flag-fill text-success'></i> <b>A:</b> " . ($destinazioneEffettiva ?: 'N/D') . "</div>
+                    </div>
+
+                    <div class='$coloreStato mb-3 fw-bold'>
+                        <i class='bi bi-info-circle'></i> $statoVisualizzato
                     </div>
 
                     <div class='border-top pt-2'>

@@ -1,0 +1,79 @@
+-- Dati : luoghi
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("Abitazione dell'utente","-","-","-","-",1);     -- ID=1 : luogo Abitazione paziente
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("Luogo fittizio","-","-","-","-",1);             -- ID=2 : luogo fittizio per le missioni che non lo richiedono
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("Ospedale S.Jacopo","Via Ciliegiole","97","Pistoia (PT)","Ospedale San Jacopo - Pistoia",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("Ospedale Ceppo","Via degli Armeni","10","Pistoia (PT)","ex Ospedale Ceppo - Pistoia",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("COOP - Pistoia","Viale Adua",2,"Pistoia (PT)","Supermercato COOP di Pistoia",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("Spazio Incontri ARGINE (BONELLE)","Via Bonellina",235,"Pistoia (PT)","Spazio incontri Argine, situato a Bonelle",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("Spazio ANTEAS F.N.P","Via Valiani",5,"Pistoia (PT)","Spazio ANTEAS - Federazione Naz.Le Pensionati Cisl Sez. Terr. Pistoia",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("Spazio Incontri ANGOLO (FORNACI)","Via Giuseppe Gentile",11,"Pistoia (PT)","Spazio incontri Angolo, situato alle Fornaci",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("MAIC - Terapie","Via di S.Biagio in Cascheri",102,"Pistoia (PT)","Fondazione MAiC riabilitazione",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("FARMACIA - Comunale 1","Viale Adua",40,"Pistoia (PT)","Farmacia Comunale 1 - Viale Adua",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("VILLA MARIA","Viale Fiume",4,"Pistoia (PT)","Centro Diagnostico Villa Maria",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("DENTISTA - Montecatini","Localita Montecatini",0,"Montecatini (PT)","Dentista di Montecatini",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("CONAD - V.le Adua","Viale Adua",223,"Pistoia (PT)","Supermercato CONAD SUPERSTORE di Pistoia",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("PARRUCCHIERA - Pistoia","Localita Pistoia",0,"Pistoia (PT)","Parrucchiera di Pistoia",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("CHIESA S.BARTOLOMEO - Pistoia","Piazza S.Bartolomeo",11,"Pistoia (PT)","Parrocchia di San Bartolomeo",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("CRV VILLONE - Terapie","Via del Villone",0,"Pistoia (PT)","USL Toscana Centro - Centro di Riabilitazione",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("TURATI - Terapie","Via Panconi",41,"Pistoia (PT)","Centro di Riabilitazione e Terapia Fisica di Pistoia della Fondazione Turati",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("CAREGGI - Firenze","Largo Brambilla",3,"Firenze (FI)","Azienda Ospedaliero Universitaria Careggi",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("FARMACIA - Belvedere","Via Dalmazia",326,"Pistoia (PT)","Farmacia del Belvedere",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("FARMACIA - Pontelungo","Via Provinciale Lucchese",88,"Pistoia (PT)","Farmacia di Pontelungo",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("DISTRETTO USL - Belvedere","Piazza Belvedere",5,"Pistoia (PT)","Azienda USL Toscana Centro - Distretto Belvedere",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("Centro Radiologico Toscano","Via Gian Battista Vico",2,"Pistoia (PT)","Istituto Radiologico Toscano",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("CENTRO LIFE - Terapie","Via E.Fermi",1,"Pistoia (PT)","Centro Fisioterapico Life",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("FISIOTERAPIA VIA CHITI","Via A.Chiti",8,"Pistoia (PT)","Studio Fisioterapico Via Chiti a Pistoia",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("BANCA - Pistoia","Localita Pistoia",0,"Pistoia (PT)","Banca di Pistoia",1);
+
+insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) 
+values("UISP FORNACI - Ginnastica","Via del Fornacione",52,"Pistoia (PT)","Ginnastica UISP al Circolo delle Fornaci",1);

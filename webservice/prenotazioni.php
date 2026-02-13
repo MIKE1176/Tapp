@@ -49,6 +49,20 @@
     <div class="m-4 bg-light rounded-5 p-4 shadow-lg">
         <h2 class="fw-bold text-danger text-uppercase">Prenotazioni</h2>
         <hr>
+        
+        <div class="mt-2 mb-3">
+            <span class="text-secondary small fw-bold text-uppercase">Per Info e Urgenze: </span>
+            <div class="d-flex flex-wrap gap-3 mt-1">
+                <a href="tel:+393534815583" class="text-decoration-none text-dark fw-medium small">
+                    <i class="bi bi-telephone-fill text-danger me-1"></i> 353 481 5583
+                </a>
+                <a href="tel:+390573364631" class="text-decoration-none text-dark fw-medium small">
+                    <i class="bi bi-telephone-fill text-danger me-1"></i> 0573 364631
+                </a>
+            </div>
+        </div>
+        
+        <hr>
         <div class="bg-danger rounded-3 p-3 mb-2 border border-white text-center shadow-sm">
             <p class="m-0 small fw-bold text-white">
                 <i class="bi bi-exclamation-circle-fill"></i> 

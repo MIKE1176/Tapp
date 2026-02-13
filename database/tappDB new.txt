@@ -18,7 +18,7 @@ CREATE TABLE operatore (
 
 CREATE TABLE luogo (
     ID INT AUTO_INCREMENT,
-    denominazione VARCHAR(30),
+    denominazione VARCHAR(40),
     indirizzo VARCHAR(30),
     civico VARCHAR(5),
     citta VARCHAR(30),
