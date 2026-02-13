@@ -16,15 +16,18 @@ $html = <<<HTML
     <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link text-center" href="missioni.php" id="missioni">I miei Trasporti</a>
+          <a class="nav-link text-center" href="operatoreMissioni.php" id="operatoreMissioni">I miei Trasporti</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-center" href="mieiTurni.php" id="mieiTurni">I miei Turni</a>
+          <a class="nav-link text-center" href="trasportiDaAssegnare.php" id="trasportiDaAssegnare">Richieste Trasporti</a>
         </li>
 HTML;
 
 if($_SESSION['auth'] == "AMMINISTRATIVO"){
   $html .= <<<HTML
+      <li class="nav-item">
+        <a class="nav-link text-center" href="operatoreTurni.php" id="operatoreTurni">I miei Turni</a>
+      </li>
       <li class="nav-item">
         <a class="nav-link text-center" href="gestioneMissioni.php" id="gestioneMissioni">Gestione missioni</a>
       </li>

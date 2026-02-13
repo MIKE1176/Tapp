@@ -29,19 +29,21 @@
 
 <body class="ubuntu-regular">
     <div class="vstack gap-3 vh-100 p-3">
-        <button class="btn btn-primary p-3 p-sm-5 rounded-5 shadow h-100"
-            onclick="window.location.href='formPrenotazione.php'">
-            <h1 class="display-1 fw-semibold">RICHIEDI SERVIZI <!--<i class="bi bi-clipboard2-plus-fill"></i>--></h1>
-        </button>
-        <button class="btn btn-danger p-3 p-sm-5 rounded-5 shadow h-100"
-            onclick="window.location.href='prenotazioni.php'">
-            <h1 class="display-1 fw-semibold">SERVIZI PRENOTATI <!--<i class="bi bi-clipboard2-check-fill"></i>--></h1>
-        </button>
-        <button class="btn btn-success p-3 p-sm-5 rounded-5 shadow h-100" style="background-color: rgb(24, 116, 24);"
-            onclick="window.location.href='profilo.php'">
-            <h1 class="display-1 fw-semibold">PROFILO <!--<i class="bi bi-person-fill"></i>--></h1>
-        </button>
-    </div>
+    <button class="btn btn-primary p-3 p-sm-5 rounded-5 shadow flex-grow-1"
+        onclick="window.location.href='formPrenotazione.php'">
+        <h1 class="display-1 fw-semibold">RICHIEDI TRASPORTO</h1>
+    </button>
+
+    <button class="btn btn-danger p-3 p-sm-5 rounded-5 shadow flex-grow-1"
+        onclick="window.location.href='prenotazioni.php'">
+        <h1 class="display-1 fw-semibold">SERVIZI PRENOTATI</h1>
+    </button>
+
+    <button class="btn btn-success p-3 p-sm-5 rounded-5 shadow" style="background-color: rgb(24, 116, 24);"
+        onclick="window.location.href='profilo.php'">
+        <h1 class="display-1 fw-semibold">PROFILO</h1>
+    </button>
+</div>
 </body>
 
 </html>

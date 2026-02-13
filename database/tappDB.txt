@@ -13,7 +13,7 @@ create table turno(ID int auto_increment, dataInizio datetime, dataFine datetime
 
 create table utente(ID int auto_increment,CF varchar(20),nome varchar(30),cognome varchar(30),dataNascita date,luogoNascita varchar(30),sesso varchar(1),indirizzo varchar(30),civico varchar(5),citta varchar(30), telefono bigint, noteUtente longtext, username longtext, password longtext, attivo bool, PRIMARY KEY(ID));
 
-create table missione(ID int auto_increment,statoCompilazione enum("INSERITA","ASSEGNATA","COMPLETATA", "ANNULLATA"), data datetime, durata time, tipo enum("ANDATA","RITORNO","UNICO"), annotazioni longtext, id_collegamento int, id_obiettivo int,id_destinazione int,id_turno int,id_utente int,PRIMARY KEY(ID),FOREIGN KEY(id_obiettivo) REFERENCES luogo(ID),FOREIGN KEY(id_destinazione) REFERENCES luogo(ID),FOREIGN KEY(id_utente) REFERENCES utente(ID), FOREIGN KEY(id_turno) REFERENCES turno(ID));
+create table missione(ID int auto_increment,statoCompilazione enum("INSERITA","ASSEGNATA","RIFIUTATA", "ANNULLATA"), data datetime, durata time, tipo enum("ANDATA","RITORNO","UNICO"), annotazioni longtext, id_collegamento int, id_obiettivo int,id_destinazione int,id_turno int,id_operatore int,id_utente int,PRIMARY KEY(ID),FOREIGN KEY(id_obiettivo) REFERENCES luogo(ID),FOREIGN KEY(id_destinazione) REFERENCES luogo(ID),FOREIGN KEY(id_utente) REFERENCES utente(ID), FOREIGN KEY(id_turno) REFERENCES turno(ID), FOREIGN KEY (id_operatore) REFERENCES operatore(ID));
 
 create table evento(ID int auto_increment,dataOra datetime,tipo enum("PARTENZA","OBIETTIVO","DESTINAZIONE","FINE","RIENTRO"),id_missione int,PRIMARY KEY(ID),FOREIGN KEY(id_missione) REFERENCES missione(ID));
 
@@ -36,8 +36,9 @@ insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) values("Ospe
 
 insert into luogo(denominazione,indirizzo,civico,citta,note,attivo) values("COOP - Pistoia","Viale Adua",2,"Pistoia (PT)","Supermercato COOP di Pistoia",1);
 
--- Dati 3: pazienti
+-- Dati 3: utenti
 
+insert into utente(CF,nome,cognome,dataNascita,luogoNascita,sesso,indirizzo,civico,citta,telefono,noteUtente,username,password,attivo) values('PRVTNT00A01G713R', 'Utente', 'Prova', '20000101', 'Pistoia', 'M', 'Via Prova', '1', 'Pistoia', 1234567890, 'Nessuna nota particolare',"provautente", "$2y$10$qAG121h57hnM41IDf5PlD.KntFr.URbs4RPfyn2IrplR8TGJBtg8u",1);
 insert into utente(CF,nome,cognome,dataNascita,luogoNascita,sesso,indirizzo,civico,citta,telefono,noteUtente,username,password,attivo) values('RSSMRA90E15H501S', 'Mario', 'Rossi', '19900515', 'Roma', 'M', 'Via Roma', '10', 'Milano', 1234567890, 'Nessuna nota particolare',"michele", "$2y$10$qAG121h57hnM41IDf5PlD.KntFr.URbs4RPfyn2IrplR8TGJBtg8u",1);
 
 -- Dati 4: operatore

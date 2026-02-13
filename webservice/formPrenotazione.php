@@ -9,6 +9,8 @@
     $minGG = $config['preavviso_minimo_giorni'];
     $maxGG = $config['limite_massimo_giorni'];
 
+    $giorniAttivi = $config['giorni_attivi']; // es: [1, 2, 3, 4, 5]
+
     $slotDurata = $config['slot_orari_minuti'];         // Step 2
     $slotPrenotazione = $config['slot_prenotazioni'];   // Step 3
 
@@ -62,6 +64,19 @@
         .slot-wrapper label {
             transition: all 0.2s ease-in-out;
         }
+        
+        #alertServizioOff {
+            border: 3px solid #dc3545 !important;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(5px); }
+            50% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+            100% { transform: translateX(0); }
+        }
     </style>
     <link rel="icon" href="../assets/favicon.ico" type="image/x-icon">
     <title>Nuova prenotazione</title>
@@ -74,11 +89,49 @@
     };
 
     const slotDurata = <?php echo $slotDurata; ?>;
+    const giorniAttivi = <?php echo json_encode($giorniAttivi); ?>;
+    let servizioAttivo = true;
     const nomiMesi = ["GENNAIO", "FEBBRAIO", "MARZO", "APRILE", "MAGGIO", "GIUGNO", "LUGLIO", "AGOSTO", "SETTEMBRE", "OTTOBRE", "NOVEMBRE", "DICEMBRE"];
+    const nomiGiorni = ["DOMENICA", "LUNEDÌ", "MARTEDÌ", "MERCOLEDÌ", "GIOVEDÌ", "VENERDÌ", "SABATO"];
 
     function aggiornaMeseTesto() {
         let m = parseInt(document.getElementById('meseArrivo').value);
         if(!isNaN(m)) document.getElementById('meseArrivoDisplay').value = nomiMesi[m - 1];
+    }
+
+    function verificaGiornoServizio() {
+        let g = parseInt(document.getElementById('giornoArrivo').value);
+        let m = parseInt(document.getElementById('meseArrivo').value);
+        let a = parseInt(document.getElementById('annoArrivo').value);
+        
+        let d = new Date(a, m - 1, g);
+        let indiceGiorno = d.getDay(); // 0 = Domenica, 1 = Lunedì, ecc.
+        
+        // Per il controllo con l'array PHP [1,2,3,4,5] dove 7 è Domenica
+        let giornoISO = (indiceGiorno === 0) ? 7 : indiceGiorno;
+
+        let avviso = document.getElementById('alertServizioOff');
+        let motivoGiorno = document.getElementById('motivoGiorno');
+        let btn = document.getElementById('btnVaiAOrario');
+        let sezioneDurata = document.getElementById('sezioneDurata'); // Il blocco "Quanto tempo starai"
+
+        if (giorniAttivi.includes(giornoISO)) {
+            // --- SERVIZIO ATTIVO ---
+            servizioAttivo = true;
+            avviso.classList.add('d-none');
+            sezioneDurata.classList.remove('d-none'); // Mostra la durata
+            validaDurata(); 
+        } else {
+            // --- SERVIZIO NON ATTIVO ---
+            servizioAttivo = false;
+            
+            // Inseriamo il nome del giorno nell'alert
+            motivoGiorno.innerText = nomiGiorni[indiceGiorno];
+            
+            avviso.classList.remove('d-none');
+            sezioneDurata.classList.add('d-none'); // Nasconde la scelta della durata e orari
+            btn.disabled = true;
+        }
     }
 
     // --- CALENDARIO CORE ---
@@ -122,6 +175,8 @@
         document.getElementById('annoArrivo').value = d.getFullYear();
 
         aggiornaMeseTesto();
+
+        verificaGiornoServizio();
     }
 
     // --- DURATA ---
@@ -240,6 +295,10 @@
         let ore = parseInt(document.getElementById('oreDurata').value);
         let min = parseInt(document.getElementById('minutiDurata').value);
         let btn = document.getElementById('btnVaiAOrario');
+        if (!servizioAttivo) {
+            btn.disabled = true;
+            return;
+        }
         btn.disabled = (ore === 0 && min === 0);
     }
 
@@ -255,6 +314,7 @@
         document.getElementById('meseArrivo').value = (min.getMonth() + 1).toString().padStart(2, '0');
         document.getElementById('annoArrivo').value = min.getFullYear();
         aggiornaMeseTesto();
+        verificaGiornoServizio();
         validaDurata();
         window.scrollTo(0,0);
     }
@@ -363,37 +423,46 @@
                             <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('annoArrivo', 1, 2026, 2030)"><i class="bi bi-dash h4"></i></button>
                         </div>
                     </div>
-                    <div id="avvisoData" class="alert alert-warning text-center fw-bold d-none rounded-4 border-0 mt-3 mb-3 shadow">
-                        Avviso
-                    </div>
                 </div>
 
-                <div class="bg-white p-3 rounded-5 border border-3 border-primary shadow mb-4">
-                    <h4 class="text-primary text-center fw-bold mb-3">Quanto tempo starai?</h4>
-                    <div class="row g-2">
-                        <div class="col-6 text-center">
-                            <button type="button" class="btn btn-primary w-100 mb-2 shadow-none" onclick="increase('oreDurata', 1, 0, 10)"><i class="bi bi-plus-lg h3"></i></button>
-                            <input class="form-control-plaintext text-center h1 fw-bold p-0 text-dark" id="oreDurata" name="oreDurata" readonly value="01">
-                            <div class="small fw-bold opacity-50">ORE</div>
-                            <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('oreDurata', 1, 0, 10)"><i class="bi bi-dash h3"></i></button>
-                        </div>
-                        <div class="col-6 text-center">
-                            <button type="button" class="btn btn-primary w-100 mb-2 shadow-none" onclick="increase('minutiDurata', 0, 0, 60)"><i class="bi bi-plus-lg h3"></i></button>
-                            <input class="form-control-plaintext text-center h1 fw-bold p-0 text-dark" id="minutiDurata" name="minutiDurata" readonly value="00">
-                            <div class="small fw-bold opacity-50">MINUTI</div>
-                            <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('minutiDurata', 0, 0, 60)"><i class="bi bi-dash h3"></i></button>
-                        </div>
-                    </div>
+                <div id="avvisoData" class="alert alert-warning text-center fw-bold d-none rounded-4 border-0 mt-3 mb-3 shadow">
+                    Avviso Data
                 </div>
 
-                <button type="button" id="btnVaiAOrario" class="btn btn-warning w-100 py-4 fs-2 rounded-4 border border-4 border-white shadow-lg fw-bold text-uppercase" onclick="vaiAOrario()">
-                    Prosegui <i class="bi bi-arrow-right"></i>
-                </button>
+                <div id="alertServizioOff" class="alert alert-danger text-center fw-bold d-none rounded-4 border-0 mt-3 mb-3 shadow p-4">
+                    <i class="bi bi-calendar-x h1 d-block mb-2"></i>
+                    SERVIZIO NON ATTIVO<br>
+                    PERCHÉ È <span id="motivoGiorno"></span>
+                </div>
+
+                <div id="sezioneDurata">
+                    <div class="bg-white p-3 rounded-5 border border-3 border-primary shadow mb-4">
+                        <h4 class="text-primary text-center fw-bold mb-3">Quanto tempo starai?</h4>
+                        <div class="row g-2">
+                            <div class="col-6 text-center">
+                                <button type="button" class="btn btn-primary w-100 mb-2 shadow-none" onclick="increase('oreDurata', 1, 0, 10)"><i class="bi bi-plus-lg h3"></i></button>
+                                <input class="form-control-plaintext text-center h1 fw-bold p-0 text-dark" id="oreDurata" name="oreDurata" readonly value="01">
+                                <div class="small fw-bold opacity-50">ORE</div>
+                                <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('oreDurata', 1, 0, 10)"><i class="bi bi-dash h3"></i></button>
+                            </div>
+                            <div class="col-6 text-center">
+                                <button type="button" class="btn btn-primary w-100 mb-2 shadow-none" onclick="increase('minutiDurata', 0, 0, 60)"><i class="bi bi-plus-lg h3"></i></button>
+                                <input class="form-control-plaintext text-center h1 fw-bold p-0 text-dark" id="minutiDurata" name="minutiDurata" readonly value="00">
+                                <div class="small fw-bold opacity-50">MINUTI</div>
+                                <button type="button" class="btn btn-primary w-100 mt-2 shadow-none" onclick="decrease('minutiDurata', 0, 0, 60)"><i class="bi bi-dash h3"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="btnVaiAOrario" class="btn btn-warning w-100 py-4 fs-2 rounded-4 border border-4 border-white shadow-lg fw-bold text-uppercase" onclick="vaiAOrario()">
+                        Prosegui <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
             </div>
 
             <div id="faseOrario" class="d-none">
-                <h1 class="text-light text-center h2 mb-1 fw-bold">3: ORA DI ARRIVO</h1>
-                <p class="text-white text-center h5 mb-4 opacity-75">A che ora vuoi arrivare lì?</p>
+                <h1 class="text-light text-center h2 mb-1 fw-bold">3: A CHE ORA DEVI ARRIVARE?</h1>
+                <p class="text-white text-center h5 mb-4 opacity-75">Inserisci l'ora di arrivo</p>
                 
                 <div class="bg-white p-3 rounded-5 border border-3 border-primary shadow">
                     <h5 class="text-primary fw-bold text-center border-bottom pb-2 text-uppercase">Mattina</h5>

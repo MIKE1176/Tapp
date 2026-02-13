@@ -23,12 +23,15 @@
   include('./navbar.php');
   $idOperatore = $_SESSION['ID'];
 
+  $config = json_decode(file_get_contents('../config_orari.json'), true);
+  $assegnazione = $config['giorni_assegnazione'] ?? 7;
+
   $queryNMissioni = "SELECT missione.* FROM missione JOIN turno ON missione.id_turno = turno.ID WHERE turno.id_operatore = $idOperatore AND DATE(missione.data)=CURDATE()";
 
-  $queryNTurno = "SELECT * FROM turno WHERE id_operatore = $idOperatore AND (DATE(dataInizio)=CURDATE() OR DATE(dataInizio)=DATE_ADD(CURDATE(),INTERVAL 1 DAY))";  
+  $queryNDaAssegnare = "SELECT * FROM missione WHERE missione.statoCompilazione='INSERITA' AND missione.tipo!='RITORNO' AND (DATE(missione.data) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL $assegnazione DAY))";  
   $nMissioni = mysqli_query($db, $queryNMissioni);
 
-  $nTurni = mysqli_query($db, $queryNTurno);
+  $nDaAssegnare = mysqli_query($db, $queryNDaAssegnare);
   
   ?>
 
@@ -62,9 +65,9 @@
       <div class="row justify-content-center mt-2">
         <div class="col-12 col-md-6 mb-4">
           <div class="card p-3 shadow">
-            <h2>I tuoi turni</h2>
-            <p>Hai <?php echo mysqli_num_rows($nTurni); ?> turni programmati tra oggi e domani.</p>
-            <a href="mieiTurni.php" class="btn btn-light">Vai alla pagina</a>
+            <h2>Trasporti richiesti</h2>
+            <p>Ci sono <?php echo mysqli_num_rows($nDaAssegnare); ?> richieste da assegnare per i prossimi giorni</p>
+            <a href="trasportiDaAssegnare.php" class="btn btn-light">Vai alla pagina</a>
           </div>
         </div>
         <div class="col-12 col-md-6 mb-4">

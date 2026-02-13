@@ -1,0 +1,101 @@
+create database tappDB;
+use tappDB;
+
+-- 1. Tabelle indipendenti
+CREATE TABLE operatore (
+    ID INT AUTO_INCREMENT,
+    nome VARCHAR(30),
+    cognome VARCHAR(30),
+    dataNascita DATE,
+    sesso VARCHAR(1),
+    telefono BIGINT,
+    username LONGTEXT,
+    password LONGTEXT,
+    utente ENUM("AUTISTA", "AMMINISTRATIVO"),
+    attivo BOOL,
+    PRIMARY KEY (ID)
+);
+
+CREATE TABLE luogo (
+    ID INT AUTO_INCREMENT,
+    denominazione VARCHAR(30),
+    indirizzo VARCHAR(30),
+    civico VARCHAR(5),
+    citta VARCHAR(30),
+    note LONGTEXT,
+    attivo BOOL, 
+    PRIMARY KEY (ID)
+);
+
+CREATE TABLE automezzo (
+    targa VARCHAR(10),
+    codiceMezzo VARCHAR(20),
+    img VARCHAR(255),
+    attivo BOOL,
+    PRIMARY KEY (targa)
+);
+
+CREATE TABLE utente (
+    ID INT AUTO_INCREMENT,
+    CF VARCHAR(20),
+    nome VARCHAR(30),
+    cognome VARCHAR(30),
+    dataNascita DATE,
+    luogoNascita VARCHAR(30),
+    sesso VARCHAR(1),
+    indirizzo VARCHAR(30),
+    civico VARCHAR(5),
+    citta VARCHAR(30),
+    telefono BIGINT,
+    noteUtente LONGTEXT,
+    username LONGTEXT,
+    password LONGTEXT,
+    attivo BOOL,
+    PRIMARY KEY (ID)
+);
+
+-- 2. Tabella Turno
+-- (Verrà popolata solo quando la missione passa ad ASSEGNATA)
+CREATE TABLE turno (
+    ID INT AUTO_INCREMENT,
+    dataInizio DATETIME,
+    dataFine DATETIME,
+    id_operatore INT,
+    automezzo VARCHAR(10),
+    note LONGTEXT,
+    PRIMARY KEY (ID),
+    FOREIGN KEY (id_operatore) REFERENCES operatore(ID),
+    FOREIGN KEY (automezzo) REFERENCES automezzo(targa)
+);
+
+-- 3. Tabella Missione
+CREATE TABLE missione (
+    ID INT AUTO_INCREMENT,
+    statoCompilazione ENUM("INSERITA", "ASSEGNATA", "RIFIUTATA", "ANNULLATA"),
+    data DATETIME,
+    durata TIME,
+    tipo ENUM("ANDATA", "RITORNO", "UNICO"),
+    annotazioni LONGTEXT,
+    id_collegamento INT,
+    id_obiettivo INT,
+    id_destinazione INT,
+    id_utente INT,
+    id_operatore INT,
+    id_turno INT NULL, 
+    PRIMARY KEY (ID),
+    FOREIGN KEY (id_obiettivo) REFERENCES luogo(ID),
+    FOREIGN KEY (id_destinazione) REFERENCES luogo(ID),
+    FOREIGN KEY (id_utente) REFERENCES utente(ID),
+    FOREIGN KEY (id_operatore) REFERENCES operatore(ID),
+    FOREIGN KEY (id_turno) REFERENCES turno(ID)
+);
+
+-- 4. Tabella Evento
+CREATE TABLE evento (
+    ID INT AUTO_INCREMENT,
+    dataOra DATETIME,
+    tipo ENUM("PARTENZA", "OBIETTIVO", "DESTINAZIONE", "FINE", "RIENTRO"),
+    id_missione INT,
+    PRIMARY KEY (ID),
+    FOREIGN KEY (id_missione) REFERENCES missione(ID)
+);

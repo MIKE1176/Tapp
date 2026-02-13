@@ -29,7 +29,7 @@
     </style>
 
     <link rel="icon" href="../assets/favicon.ico" type="image/x-icon">
-    <title>Le tue prenotazioni</title>
+    <title>Tapp - Prenotazioni</title>
 </head>
 
 <body class="ubuntu-regular" style="background-color: rgb(187, 0, 0);">
@@ -47,7 +47,7 @@
     </div>
 
     <div class="m-4 bg-light rounded-5 p-4 shadow-lg">
-        <h2 class="fw-bold text-danger text-uppercase">Prenotazioni attive</h2>
+        <h2 class="fw-bold text-danger text-uppercase">Prenotazioni</h2>
         <hr>
         <div class="bg-danger rounded-3 p-3 mb-2 border border-white text-center shadow-sm">
             <p class="m-0 small fw-bold text-white">
@@ -137,14 +137,37 @@ HTML;
                                 echo <<<HTML
                             <div class="small text-secondary mb-3">
                                 <i class="bi bi-clock"></i> Durata: <strong>$durataOre ore e $durataMinuti minuti.</strong><br>
-                                <i class="bi bi-geo-alt"></i> Da: $nomeObiettivo<br>
-                                <i class="bi bi-info-circle"></i> Stato: $statoCompilazione<br><br>
+                                <i class="bi bi-info-circle"></i>
+HTML;                           
+                                if ($statoCompilazione == "INSERITA") {
+                                    // Giallo per l'attesa
+                                    echo ' <span class="badge rounded-pill fs-6 px-3 py-1 my-2 bg-warning-subtle text-warning-emphasis fw-bold text-uppercase">IN ATTESA</span><br>';
+                                } elseif ($statoCompilazione == "ASSEGNATA") {
+                                    // Blu per accettata
+                                    echo ' <span class="badge rounded-pill fs-6 px-3 py-1 my-2 bg-primary-subtle text-primary-emphasis fw-bold text-uppercase">ACCETTATA</span><br>';
+                                } elseif ($statoCompilazione == "RIFIUTATA") {
+                                    // Rosso per rifiutata
+                                    echo ' <span class="badge rounded-pill fs-6 px-3 py-1 my-2 bg-dark text-white shadow-sm fw-bold text-uppercase">RIFIUTATA</span><br>';
+                                }  
+                                if($statoCompilazione!="RIFIUTATA"){
+                                    echo <<<HTML
+                                <br>
                                 <i class="bi bi-geo-fill"></i>Verremo a riprenderti alle  $orarioRientro
                             </div>
-HTML;                       
-                            }
-                            echo <<<HTML
-                            $htmlAnnulla
+HTML;                        
+                                    echo $htmlAnnulla;
+                                }else{
+                                    echo <<<HTML
+                                <div class="alert alert-warning small py-2 mt-3 mb-0 rounded-3 text-center border-0 fw-bold">
+                                    <i class="bi bi-info-circle"></i> Ci scusiamo per il disagio.<br>
+                                </div>
+                            </div>    
+HTML;  
+                                }
+                            }else{
+                                echo $htmlAnnulla;
+                            } 
+                        echo <<<HTML
                         </div>
                     </div>
 HTML;
@@ -155,29 +178,45 @@ HTML;
         ?>
         </div>
 
-        <h2 class="fw-bold mt-4 text-uppercase">Storico</h2>
-        <hr>
-        <div class="vstack gap-2 d-flex justify-content-center py-4">
-        <?php
-            $query_storico = mysqli_query($db, "SELECT missione.id AS idPrenotazione, obiettivo.denominazione AS nomeObiettivo, destinazione.denominazione AS nomeDestinazione, data, statoCompilazione FROM missione JOIN luogo AS obiettivo ON id_obiettivo = obiettivo.id JOIN luogo AS destinazione ON id_destinazione = destinazione.id WHERE data < NOW() AND tipo='ANDATA' AND id_utente = '$idUtente' ORDER BY data DESC LIMIT 5");
-            
-            if (mysqli_num_rows($query_storico) != 0) {
-                while ($row = mysqli_fetch_assoc($query_storico)) {
-                    $nomeDestinazione = $row['nomeDestinazione'];
-                    $data = DateTime::createFromFormat('Y-m-d H:i:s', $row['data'])->format('d/m/Y');
-                    $statoCompilazione=$row['statoCompilazione'];
-                    echo <<<HTML
-                    <div class="card p-2 w-100 border-0 rounded-4 bg-secondary-subtle opacity-75">
-                        <div class="card-body py-1 small">
-                            <span class="fw-bold">$data</span> - $nomeDestinazione [$statoCompilazione]
-                        </div>
-                    </div>
+        <div class="mt-4">
+            <button class="btn btn-outline-secondary w-100 border-0 d-flex justify-content-between align-items-center p-0" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#collapseStorico" 
+                    aria-expanded="false" 
+                    aria-controls="collapseStorico">
+                <h2 class="fw-bold text-uppercase mb-0">Storico</h2>
+                <i class="bi bi-chevron-down"></i>
+            </button>
+            <hr>
+
+            <div class="collapse" id="collapseStorico">
+                <div class="vstack gap-2 d-flex justify-content-center py-2">
+                <?php
+                    $query_storico = mysqli_query($db, "SELECT missione.id AS idPrenotazione, obiettivo.denominazione AS nomeObiettivo, destinazione.denominazione AS nomeDestinazione, data, statoCompilazione FROM missione JOIN luogo AS obiettivo ON id_obiettivo = obiettivo.id JOIN luogo AS destinazione ON id_destinazione = destinazione.id WHERE data < NOW() AND tipo='ANDATA' AND id_utente = '$idUtente' ORDER BY data DESC LIMIT 5");
+                    
+                    if (mysqli_num_rows($query_storico) != 0) {
+                        while ($row = mysqli_fetch_assoc($query_storico)) {
+                            $nomeDestinazione = $row['nomeDestinazione'];
+                            // Formattazione data corretta
+                            $dataObj = DateTime::createFromFormat('Y-m-d H:i:s', $row['data']);
+                            $data = $dataObj ? $dataObj->format('d/m/Y') : $row['data'];
+                            $statoCompilazione = $row['statoCompilazione'];
+                            
+                            echo <<<HTML
+                            <div class="card p-2 w-100 border-0 rounded-4 bg-secondary-subtle opacity-75">
+                                <div class="card-body py-1 small">
+                                    <span class="fw-bold">$data</span> | $nomeDestinazione
+                                </div>
+                            </div>
 HTML;
-                }
-            } else {
-                echo '<p class="text-center opacity-50 small">Nessuna prenotazione passata</p>';
-            }
-        ?>
+                        }
+                    } else {
+                        echo '<p class="text-center opacity-50 small">Nessuna prenotazione passata</p>';
+                    }
+                ?>
+                </div>
+            </div>
         </div>
     </div>
 </body>

@@ -30,13 +30,14 @@
         
          // --- REFRESH DATI UTENTE (Solo se già loggato e non è la pagina di login) ---
 
-         $stmt = $db->prepare("SELECT ID, nome, username, utente FROM operatore WHERE username = ? AND attivo = 1");
+         $stmt = $db->prepare("SELECT ID, cognome, nome, username, utente FROM operatore WHERE username = ? AND attivo = 1");
          $stmt->bind_param("s", $_SESSION['username']);
          $stmt->execute();
          $result = $stmt->get_result();
 
          if ($user_check = $result->fetch_assoc()) {
                $_SESSION['ID'] = $user_check['ID'];
+               $_SESSION['cognome'] = $user_check['cognome'];
                $_SESSION['nome'] = $user_check['nome'];
                $_SESSION['username'] = $user_check['username'];
                $_SESSION['auth'] = $user_check['utente'];
